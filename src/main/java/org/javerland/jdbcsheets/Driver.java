@@ -58,10 +58,12 @@ public class Driver implements java.sql.Driver {
         }
     }
 
-
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
-        return null;
+        Properties properties = Stream.of(getPropertyInfo(url, info)).collect(Properties::new,
+                (props, i) -> props.setProperty(i.name, i.value),
+                Properties::putAll);
+        return new JdbcSheetsConnection(properties);
     }
 
     @Override
