@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * @author Juraj Pacolt
+ * @author juraj.pacolt
  */
 public class Driver implements java.sql.Driver {
 

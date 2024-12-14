@@ -2,7 +2,7 @@
 package org.javerland.jdbcsheets;
 
 /**
- * @author Juraj Pacolt
+ * @author juraj.pacolt
  */
 public class DriverInfo {
 
