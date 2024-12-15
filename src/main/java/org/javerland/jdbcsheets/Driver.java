@@ -68,9 +68,8 @@ public class Driver implements java.sql.Driver {
 
     @Override
     public boolean acceptsURL(String url) throws SQLException {
-        return Stream.of(getPropertyInfo(url, null)).filter(i ->
-                (i.name.equals(DriverInfo.PROP_DIRECTORY) && i.name.equals(DriverInfo.PROP_DATABASE))
-                        || (i.name.equals(DriverInfo.PROP_FILE))).findFirst().isPresent();
+        return Stream.of(getPropertyInfo(url, null)).anyMatch(i ->
+                i.name.equals(DriverInfo.PROP_FILE));
     }
 
     @Override
@@ -83,10 +82,10 @@ public class Driver implements java.sql.Driver {
 
             Map<String, String> queryMap = new HashMap<>();
             if (StringUtils.isNotBlank(u.getQuery())) {
-                queryMap = Arrays.asList(u.getQuery().split("&")).stream().map(i -> {
+                queryMap = Arrays.stream(u.getQuery().split("&")).map(i -> {
                     String[] item = i.split("=");
                     try {
-                        return new AbstractMap.SimpleImmutableEntry<String, String>(
+                        return new AbstractMap.SimpleImmutableEntry<>(
                                 URLDecoder.decode(item[0], StandardCharsets.UTF_8.name()),
                                 item.length > 1 ? URLDecoder.decode(item[1], StandardCharsets.UTF_8.name()) : null
                         );
@@ -105,13 +104,11 @@ public class Driver implements java.sql.Driver {
                 }
             }
 
-            DriverPropertyInfo[] props = new DriverPropertyInfo[]{
+            return new DriverPropertyInfo[]{
                     new DriverPropertyInfo(DriverInfo.PROP_DIRECTORY, queryMap.get("directory")),
                     new DriverPropertyInfo(DriverInfo.PROP_DATABASE, queryMap.get("database")),
                     new DriverPropertyInfo(DriverInfo.PROP_FILE, queryMap.get("file"))
             };
-
-            return props;
         } catch (MalformedURLException ex) {
             throw new JdbcSheetsException(ex.getMessage(), ex);
         }
