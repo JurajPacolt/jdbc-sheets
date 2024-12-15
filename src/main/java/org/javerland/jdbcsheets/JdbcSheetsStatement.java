@@ -6,7 +6,7 @@ import java.sql.*;
 /**
  * @author juraj.pacolt
  */
-public class JdbcSheetsStatement implements Statement {
+class JdbcSheetsStatement implements Statement {
 
     private final Connection connection;
 

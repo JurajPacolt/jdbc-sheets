@@ -4,7 +4,7 @@ package org.javerland.jdbcsheets;
 /**
  * @author juraj.pacolt
  */
-public class DriverInfo {
+class DriverInfo {
 
     /** Source directory. */
     public final static String PROP_DIRECTORY = "directory";

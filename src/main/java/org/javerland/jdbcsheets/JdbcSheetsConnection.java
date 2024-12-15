@@ -10,7 +10,7 @@ import java.util.concurrent.Executor;
 /**
  * @author juraj.pacolt
  */
-public class JdbcSheetsConnection implements Connection {
+class JdbcSheetsConnection implements Connection {
 
     private Properties props;
 
