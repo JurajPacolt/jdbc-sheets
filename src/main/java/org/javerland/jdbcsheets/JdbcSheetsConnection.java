@@ -40,22 +40,23 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
-
+        // ignore
     }
 
     @Override
     public boolean getAutoCommit() throws SQLException {
+        // ignore
         return false;
     }
 
     @Override
     public void commit() throws SQLException {
-
+        // ignore
     }
 
     @Override
     public void rollback() throws SQLException {
-
+        // ignore
     }
 
     @Override
@@ -70,17 +71,18 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public DatabaseMetaData getMetaData() throws SQLException {
-        return null;
+        return new JdbcSheetsDatabaseMetadata(this);
     }
 
     @Override
     public void setReadOnly(boolean readOnly) throws SQLException {
-
+        // ignore
     }
 
     @Override
     public boolean isReadOnly() throws SQLException {
-        return false;
+        // it's only readonly ;)
+        return true;
     }
 
     @Override
@@ -95,11 +97,12 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public void setTransactionIsolation(int level) throws SQLException {
-
+        // ignore
     }
 
     @Override
     public int getTransactionIsolation() throws SQLException {
+        // ignore
         return 0;
     }
 
@@ -140,32 +143,35 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public void setHoldability(int holdability) throws SQLException {
-
+        // ignore
     }
 
     @Override
     public int getHoldability() throws SQLException {
+        // ignore
         return 0;
     }
 
     @Override
     public Savepoint setSavepoint() throws SQLException {
+        // ignore
         return null;
     }
 
     @Override
     public Savepoint setSavepoint(String name) throws SQLException {
+        // ignore
         return null;
     }
 
     @Override
     public void rollback(Savepoint savepoint) throws SQLException {
-
+        // ignore
     }
 
     @Override
     public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-
+        // ignore
     }
 
     @Override
@@ -200,21 +206,25 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public Clob createClob() throws SQLException {
+        // ignore
         return null;
     }
 
     @Override
     public Blob createBlob() throws SQLException {
+        // ignore
         return null;
     }
 
     @Override
     public NClob createNClob() throws SQLException {
+        // ignore
         return null;
     }
 
     @Override
     public SQLXML createSQLXML() throws SQLException {
+        // ignore
         return null;
     }
 
@@ -225,37 +235,38 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public void setClientInfo(String name, String value) throws SQLClientInfoException {
-
+        this.props.setProperty(name, value);
     }
 
     @Override
     public void setClientInfo(Properties properties) throws SQLClientInfoException {
-
+        this.props = properties;
     }
 
     @Override
     public String getClientInfo(String name) throws SQLException {
-        return "";
+        return props.getProperty(name);
     }
 
     @Override
     public Properties getClientInfo() throws SQLException {
-        return null;
+        return props;
     }
 
     @Override
     public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+        // ignore
         return null;
     }
 
     @Override
     public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+        // ignore
         return null;
     }
 
     @Override
     public void setSchema(String schema) throws SQLException {
-
     }
 
     @Override
@@ -265,16 +276,17 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public void abort(Executor executor) throws SQLException {
-
+        // ignore
     }
 
     @Override
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-
+        // ignore
     }
 
     @Override
     public int getNetworkTimeout() throws SQLException {
+        // ignore
         return 0;
     }
 

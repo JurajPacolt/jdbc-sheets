@@ -4,13 +4,13 @@ package org.javerland.jdbcsheets;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.sql.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,9 +60,14 @@ public class Driver implements java.sql.Driver {
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
-        Properties properties = Stream.of(getPropertyInfo(url, info)).collect(Properties::new,
-                (props, i) -> props.setProperty(i.name, i.value),
-                Properties::putAll);
+        Properties properties = Arrays.stream(getPropertyInfo(url, info))
+                .filter(i -> i != null && i.name != null)
+                .collect(Collectors.toMap(
+                        i -> i.name,
+                        i -> i.value,
+                        (existing, replacement) -> existing,
+                        Properties::new
+                ));
         return new JdbcSheetsConnection(properties);
     }
 
@@ -74,27 +79,20 @@ public class Driver implements java.sql.Driver {
 
     @Override
     public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
+        if (!url.trim().toLowerCase().startsWith("jdbc:sheets://")) {
+            throw new JdbcSheetsException("Illegal connection string url.");
+        }
         try {
-            URL u = new URL(url);
-            if (u.getProtocol().equalsIgnoreCase("jdbc")) {
-                throw new SQLException("Unsupported jdbc protocol.");
-            }
+            URL u = new URL("file://localhost" + url.substring(14));
 
             Map<String, String> queryMap = new HashMap<>();
             if (StringUtils.isNotBlank(u.getQuery())) {
-                queryMap = Arrays.stream(u.getQuery().split("&")).map(i -> {
-                    String[] item = i.split("=");
-                    try {
-                        return new AbstractMap.SimpleImmutableEntry<>(
-                                URLDecoder.decode(item[0], StandardCharsets.UTF_8.name()),
-                                item.length > 1 ? URLDecoder.decode(item[1], StandardCharsets.UTF_8.name()) : null
-                        );
-                    } catch (UnsupportedEncodingException ex) {
-                        throw new JdbcSheetsException(ex.getMessage(), ex);
-                    }
-                }).collect(
-                        Collectors.toMap(AbstractMap.SimpleImmutableEntry::getKey,
-                                AbstractMap.SimpleImmutableEntry::getValue));
+                queryMap = Arrays.stream(u.getQuery().split("&"))
+                        .map(param -> param.split("="))
+                        .collect(Collectors.toMap(
+                                entry -> entry[0],
+                                entry -> entry.length > 1 ? entry[1] : ""
+                        ));
             }
 
             if (info != null) {

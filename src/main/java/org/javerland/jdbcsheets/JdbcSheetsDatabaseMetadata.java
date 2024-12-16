@@ -8,6 +8,12 @@ import java.sql.*;
  */
 class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
+    private JdbcSheetsConnection connection;
+
+    public JdbcSheetsDatabaseMetadata(JdbcSheetsConnection connection) {
+        this.connection = connection;
+    }
+
     @Override
     public boolean allProceduresAreCallable() throws SQLException {
         return false;
@@ -20,17 +26,18 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public String getURL() throws SQLException {
+        // TODO doriesit ...
         return "";
     }
 
     @Override
     public String getUserName() throws SQLException {
-        return "";
+        return "unknown";
     }
 
     @Override
     public boolean isReadOnly() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -55,32 +62,32 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public String getDatabaseProductName() throws SQLException {
-        return "";
+        return "XLSX, ODS, CSV files";
     }
 
     @Override
     public String getDatabaseProductVersion() throws SQLException {
-        return "";
+        return "???";
     }
 
     @Override
     public String getDriverName() throws SQLException {
-        return "";
+        return DriverInfo.DRIVER_NAME;
     }
 
     @Override
     public String getDriverVersion() throws SQLException {
-        return "";
+        return DriverInfo.DRIVER_VERSION;
     }
 
     @Override
     public int getDriverMajorVersion() {
-        return 0;
+        return DriverInfo.MAJOR_VERSION;
     }
 
     @Override
     public int getDriverMinorVersion() {
-        return 0;
+        return DriverInfo.MINOR_VERSION;
     }
 
     @Override
@@ -800,22 +807,22 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public int getDatabaseMajorVersion() throws SQLException {
-        return 0;
+        return -1;
     }
 
     @Override
     public int getDatabaseMinorVersion() throws SQLException {
-        return 0;
+        return -1;
     }
 
     @Override
     public int getJDBCMajorVersion() throws SQLException {
-        return 0;
+        return DriverInfo.JDBC_MAJOR_VERSION;
     }
 
     @Override
     public int getJDBCMinorVersion() throws SQLException {
-        return 0;
+        return DriverInfo.JDBC_MINOR_VERSION;
     }
 
     @Override
