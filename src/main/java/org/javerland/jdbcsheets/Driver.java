@@ -68,6 +68,7 @@ public class Driver implements java.sql.Driver {
                         (existing, replacement) -> existing,
                         Properties::new
                 ));
+        properties.setProperty("url", url);
         return new JdbcSheetsConnection(properties);
     }
 

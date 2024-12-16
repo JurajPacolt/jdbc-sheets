@@ -48,7 +48,8 @@ public class BasicDriverTest {
             DatabaseMetaData dmd = conn.getMetaData();
             boolean driverName = dmd.getDriverName().equals(DriverInfo.DRIVER_NAME);
             boolean driverVersion = dmd.getDriverVersion().equals(DriverInfo.DRIVER_VERSION);
-            Assertions.assertTrue(driverName && driverVersion);
+            boolean url = dmd.getURL().equals(URL_WITH_FILE);
+            Assertions.assertTrue(driverName && driverVersion && url);
         }
     }
 }

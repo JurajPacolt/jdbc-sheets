@@ -26,8 +26,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public String getURL() throws SQLException {
-        // TODO doriesit ...
-        return "";
+        return connection.getClientInfo("url");
     }
 
     @Override
