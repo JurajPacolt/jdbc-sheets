@@ -14,14 +14,24 @@ import java.util.Map;
  */
 class JdbcSheetsResultSet implements ResultSet {
 
+    private JdbcSheetsConnection connection;
+    private AbstractReader reader;
+    private Object[] actualRow;
+
+    public JdbcSheetsResultSet(JdbcSheetsConnection connection) {
+        this.connection = connection;
+        // TODO doriesit instanciu readera ...
+    }
+
     @Override
     public boolean next() throws SQLException {
-        return false;
+        actualRow = reader.next();
+        return actualRow != null;
     }
 
     @Override
     public void close() throws SQLException {
-
+        reader.close();
     }
 
     @Override
@@ -31,82 +41,93 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public String getString(int columnIndex) throws SQLException {
-        return "";
+        return actualRow[columnIndex] == null ? null : String.valueOf(actualRow[columnIndex]);
     }
 
     @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
-        return false;
+        String value = getString(columnIndex);
+        return value != null ? getString(columnIndex).equals("true") : false;
     }
 
     @Override
     public byte getByte(int columnIndex) throws SQLException {
-        return 0;
+        String value = getString(columnIndex);
+        return value != null ? Byte.valueOf(value) : -1;
     }
 
     @Override
     public short getShort(int columnIndex) throws SQLException {
-        return 0;
+        String value = getString(columnIndex);
+        return value != null ? Short.valueOf(value) : -1;
     }
 
     @Override
     public int getInt(int columnIndex) throws SQLException {
-        return 0;
+        String value = getString(columnIndex);
+        return value != null ? Integer.valueOf(value) : -1;
     }
 
     @Override
     public long getLong(int columnIndex) throws SQLException {
-        return 0;
+        String value = getString(columnIndex);
+        return value != null ? Long.valueOf(value) : -1;
     }
 
     @Override
     public float getFloat(int columnIndex) throws SQLException {
-        return 0;
+        String value = getString(columnIndex);
+        return value != null ? Float.valueOf(value) : -1;
     }
 
     @Override
     public double getDouble(int columnIndex) throws SQLException {
-        return 0;
+        String value = getString(columnIndex);
+        return value != null ? Double.valueOf(value) : -1;
     }
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-        return null;
+        String value = getString(columnIndex);
+        return value != null ? new BigDecimal(value) : null;
     }
 
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
-        return new byte[0];
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Date getDate(int columnIndex) throws SQLException {
+        // TODO ...
         return null;
     }
 
     @Override
     public Time getTime(int columnIndex) throws SQLException {
+        // TODO ...
         return null;
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
+        // TODO ...
         return null;
     }
 
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override

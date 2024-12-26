@@ -6,11 +6,17 @@ package org.javerland.jdbcsheets;
  */
 public class DriverInfo {
 
-    /** Source directory. */
+    /**
+     * Source directory.
+     */
     public final static String PROP_DIRECTORY = "directory";
-    /** File name in directory. */
+    /**
+     * File name in directory.
+     */
     public final static String PROP_DATABASE = "database";
-    /** Absolute/Relative path of the file. */
+    /**
+     * Absolute/Relative path of the file.
+     */
     public final static String PROP_FILE = "file";
 
     // Driver version
