@@ -75,7 +75,7 @@ class XslxReader extends AbstractReader {
                 if (node instanceof SqlIdentifier) {
                     SqlIdentifier ident = (SqlIdentifier) node;
                     String columnName = ident.names.get(0);
-                    columns.add(columnName);
+                    columns.add(columnName.toUpperCase());
                 }
             }
 
@@ -124,8 +124,8 @@ class XslxReader extends AbstractReader {
     }
 
     @Override
-    public String getType() {
-        return "XLSX";
+    public ReaderType getType() {
+        return ReaderType.XLSX;
     }
 
     int getColumnIndexFromName(String cn) {

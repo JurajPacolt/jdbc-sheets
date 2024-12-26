@@ -24,5 +24,5 @@ public abstract class AbstractReader {
 
     public abstract Object[] next();
 
-    public abstract String getType();
+    public abstract ReaderType getType();
 }

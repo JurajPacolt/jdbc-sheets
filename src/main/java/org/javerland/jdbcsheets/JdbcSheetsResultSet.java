@@ -8,6 +8,7 @@ import java.net.URL;
 import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author juraj.pacolt
@@ -15,12 +16,29 @@ import java.util.Map;
 class JdbcSheetsResultSet implements ResultSet {
 
     private JdbcSheetsConnection connection;
+    private JdbcSheetsStatement stmt;
+    private final String id;
     private AbstractReader reader;
     private Object[] actualRow;
+    private String query;
 
-    public JdbcSheetsResultSet(JdbcSheetsConnection connection) {
+    public JdbcSheetsResultSet(JdbcSheetsConnection connection, JdbcSheetsStatement stmt, String query) {
+        this.id = UUID.randomUUID().toString();
         this.connection = connection;
-        // TODO doriesit instanciu readera ...
+        this.stmt = stmt;
+        this.query = query;
+        switch (connection.getReaderType()) {
+            case XLSX:
+                reader = new XslxReader(stmt.getFile());
+                break;
+            default:
+                throw new JdbcSheetsException("Unsupported reader type: " + connection.getReaderType());
+        }
+        reader.parseQuery(query);
+    }
+
+    public String getId() {
+        return id;
     }
 
     @Override
@@ -31,7 +49,11 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public void close() throws SQLException {
-        reader.close();
+        try {
+            reader.close();
+        } finally {
+            stmt.closeResultSet(id);
+        }
     }
 
     @Override

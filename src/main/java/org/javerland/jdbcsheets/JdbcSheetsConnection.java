@@ -1,8 +1,12 @@
 /* Created on 14.12.2024 */
 package org.javerland.jdbcsheets;
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.File;
 import java.sql.*;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
@@ -13,14 +17,38 @@ import java.util.concurrent.Executor;
 class JdbcSheetsConnection implements Connection {
 
     private Properties props;
+    private File file;
+    private Map<String, JdbcSheetsStatement> statements = new LinkedHashMap<>();
 
     public JdbcSheetsConnection(Properties props) {
         this.props = props;
+        this.file = getSourceFile();
+    }
+
+    protected ReaderType getReaderType() {
+        String fileName = file.getName();
+        int lastDotIndex = fileName.lastIndexOf('.');
+        String extension = fileName.substring(lastDotIndex + 1);
+        return ReaderType.valueOf(extension.toUpperCase());
+    }
+
+    private File getSourceFile() {
+        try {
+            String file = getClientInfo(DriverInfo.PROP_FILE);
+            if (StringUtils.isBlank(file)) {
+                file = getClientInfo(DriverInfo.PROP_DIRECTORY) + File.separator + getClientInfo(DriverInfo.PROP_DATABASE);
+            }
+            return new File(file);
+        } catch (SQLException ex) {
+            throw new JdbcSheetsException(ex.getMessage(), ex);
+        }
     }
 
     @Override
     public Statement createStatement() throws SQLException {
-        return null;
+        JdbcSheetsStatement stmt = new JdbcSheetsStatement(this, file);
+        statements.put(stmt.getId(), stmt);
+        return stmt;
     }
 
     @Override
@@ -61,7 +89,10 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public void close() throws SQLException {
-
+        for (JdbcSheetsStatement stmt : statements.values()) {
+            stmt.close();
+        }
+        statements.clear();
     }
 
     @Override
