@@ -16,9 +16,9 @@ import java.util.concurrent.Executor;
  */
 class JdbcSheetsConnection implements Connection {
 
-    private Properties props;
-    private File file;
-    private Map<String, JdbcSheetsStatement> statements = new LinkedHashMap<>();
+    Properties props;
+    File file;
+    Map<String, Statement> statements = new LinkedHashMap<>();
 
     public JdbcSheetsConnection(Properties props) {
         this.props = props;
@@ -53,12 +53,16 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        return null;
+        JdbcSheetsPreparedStatement ps = new JdbcSheetsPreparedStatement(this, file, sql);
+        statements.put(ps.getId(), ps);
+        return ps;
     }
 
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
-        return null;
+        JdbcSheetsCallableStatement cs = new JdbcSheetsCallableStatement(this, file, sql);
+        statements.put(cs.getId(), cs);
+        return cs;
     }
 
     @Override
@@ -89,7 +93,7 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public void close() throws SQLException {
-        for (JdbcSheetsStatement stmt : statements.values()) {
+        for (Statement stmt : statements.values()) {
             stmt.close();
         }
         statements.clear();

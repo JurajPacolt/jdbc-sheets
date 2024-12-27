@@ -12,10 +12,10 @@ import java.util.UUID;
  */
 class JdbcSheetsStatement implements Statement {
 
-    private final JdbcSheetsConnection connection;
-    private final File file;
-    private final String id;
-    private Map<String, JdbcSheetsResultSet> resultSetMap = new LinkedHashMap<>();
+    final JdbcSheetsConnection connection;
+    final File file;
+    final String id;
+    Map<String, JdbcSheetsResultSet> resultSetMap = new LinkedHashMap<>();
 
     public JdbcSheetsStatement(JdbcSheetsConnection connection, File file) {
         this.connection = connection;
