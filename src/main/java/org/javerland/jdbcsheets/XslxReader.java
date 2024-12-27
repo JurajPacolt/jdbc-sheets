@@ -1,14 +1,14 @@
 /* Created on 21.12.2024 */
 package org.javerland.jdbcsheets;
 
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.SqlSelect;
+import org.apache.calcite.avatica.SqlType;
+import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -16,6 +16,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -26,7 +27,8 @@ import java.util.List;
 class XslxReader extends AbstractReader {
 
     SqlParser.Config parserConfig = SqlParser.config()
-            .withCaseSensitive(false);
+            .withCaseSensitive(false)
+            .withConformance(SqlConformanceEnum.MYSQL_5);
     XSSFSheet sheet = null;
     XSSFWorkbook workbook = null;
 
@@ -51,11 +53,18 @@ class XslxReader extends AbstractReader {
 
     @Override
     public Object[] next() {
+        if (offset != null && limit != null && index > (offset + Math.abs(limit - 1))) {
+            return null;
+        }
         List<Object> result = new ArrayList<>();
         XSSFRow row = sheet.getRow(index);
+        if (row == null) {
+            return null;
+        }
         columns.forEach(column -> {
-            int idx = getColumnIndexFromName(column);
-            String value = row.getCell(idx).getStringCellValue();
+            int idx = getColumnIndexFromName(column.getName());
+            XSSFCell cell = row.getCell(idx);
+            String value = cell != null ? cell.getStringCellValue() : null;
             result.add(value);
         });
         index++;
@@ -63,11 +72,19 @@ class XslxReader extends AbstractReader {
     }
 
     @Override
-    public void parseQuery(String query) {
+    public void parseQuery(String query) throws SQLException {
         try {
             SqlParser parser = SqlParser.create(query, parserConfig);
 
-            SqlSelect select = (SqlSelect) parser.parseQuery();
+            SqlSelect select = null;
+            SqlOrderBy orderBy = null;
+            SqlNode parsed = (SqlNode) parser.parseQuery();
+            if (parsed instanceof SqlOrderBy) {
+                orderBy = (SqlOrderBy) parsed;
+                select = (SqlSelect) orderBy.query;
+            } else {
+                select = (SqlSelect) parsed;
+            }
 
             // Columns from sheet, if * all columns returned.
             SqlNodeList selectList = select.getSelectList();
@@ -75,7 +92,14 @@ class XslxReader extends AbstractReader {
                 if (node instanceof SqlIdentifier) {
                     SqlIdentifier ident = (SqlIdentifier) node;
                     String columnName = ident.names.get(0);
-                    columns.add(columnName.toUpperCase());
+                    columns.add(new Column(columnName.toUpperCase(), null, SqlType.VARCHAR));
+                } else if (node instanceof SqlBasicCall) {
+                    SqlBasicCall call = (SqlBasicCall) node;
+                    if (call.getOperator() != null && call.getOperator().toString().toUpperCase().equals("AS")) {
+                        String columnName = call.getOperandList().get(0).toString();
+                        String columnAlias = call.getOperandList().get(1).toString();
+                        columns.add(new Column(columnName.toUpperCase(), columnAlias, SqlType.VARCHAR));
+                    }
                 }
             }
 
@@ -84,6 +108,7 @@ class XslxReader extends AbstractReader {
             SqlIdentifier tableName;
             if (from instanceof SqlIdentifier) {
                 tableName = (SqlIdentifier) from;
+                this.tableName = tableName.toString();
             } else {
                 throw new JdbcSheetsException("Others identifiers not supported now.");
             }
@@ -94,21 +119,26 @@ class XslxReader extends AbstractReader {
                 // TODO For now we don't need, bud it's needed to finish to the future ...
             }
 
-            offset = select.getOffset() != null ? Integer.valueOf(select.getOffset().toString()) : null;
+            offset = orderBy != null && orderBy.offset != null ? Integer.valueOf(orderBy.offset.toString())
+                    : (select.getOffset() != null ? Integer.valueOf(select.getOffset().toString()) : null);
             if (offset != null) {
                 index = offset;
             }
-            limit = select.getFetch() != null ? Integer.valueOf(select.getFetch().toString()) : null;
+            limit = orderBy != null && orderBy.fetch != null ? Integer.valueOf(orderBy.fetch.toString())
+                    : (select.getFetch() != null ? Integer.valueOf(select.getFetch().toString()) : null);
 
             try {
                 workbook = new XSSFWorkbook(Files.newInputStream(file.toPath()), false);
                 sheet = workbook.getSheet(tableName.getSimple());
+                if (sheet == null) {
+                    throw new SQLException(String.format("Sheet with name \"%s\" doesn't exists.", tableName.getSimple()));
+                }
             } catch (IOException ex) {
-                throw new JdbcSheetsException(ex.getMessage(), ex);
+                throw new SQLException(ex.getMessage(), ex);
             }
 
         } catch (SqlParseException ex) {
-            throw new JdbcSheetsException(ex.getMessage(), ex);
+            throw new SQLException(ex.getMessage(), ex);
         }
     }
 

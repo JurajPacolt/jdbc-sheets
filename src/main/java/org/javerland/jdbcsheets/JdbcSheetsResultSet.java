@@ -22,7 +22,7 @@ class JdbcSheetsResultSet implements ResultSet {
     private Object[] actualRow;
     private String query;
 
-    public JdbcSheetsResultSet(JdbcSheetsConnection connection, JdbcSheetsStatement stmt, String query) {
+    public JdbcSheetsResultSet(JdbcSheetsConnection connection, JdbcSheetsStatement stmt, String query) throws SQLException {
         this.id = UUID.randomUUID().toString();
         this.connection = connection;
         this.stmt = stmt;
@@ -63,7 +63,7 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public String getString(int columnIndex) throws SQLException {
-        return actualRow[columnIndex] == null ? null : String.valueOf(actualRow[columnIndex]);
+        return actualRow[columnIndex - 1] == null ? null : String.valueOf(actualRow[columnIndex - 1]);
     }
 
     @Override
@@ -249,12 +249,12 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        return null;
+        return new JdbcSheetsResultSetMetaData(reader);
     }
 
     @Override
     public Object getObject(int columnIndex) throws SQLException {
-        return null;
+        return getString(columnIndex);
     }
 
     @Override
@@ -329,7 +329,7 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public int getRow() throws SQLException {
-        return 0;
+        return reader.getRowIndex();
     }
 
     @Override
@@ -619,7 +619,7 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public Statement getStatement() throws SQLException {
-        return null;
+        return stmt;
     }
 
     @Override

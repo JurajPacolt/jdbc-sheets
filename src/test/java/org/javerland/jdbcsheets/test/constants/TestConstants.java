@@ -6,7 +6,7 @@ package org.javerland.jdbcsheets.test.constants;
  */
 public class TestConstants {
 
-    public final static String FILE_NAME = "test-data.xlsx";
+    public final static String FILE_NAME = "src/test/resources/test-data.xlsx";
     public final static String DIRECTORY = ".";
     public final static String FULL_FILE_PATH = String.format("%s/%s", DIRECTORY, FILE_NAME);
     public final static String URL_WITH_PARAMS = String.format("jdbc:sheets://?database=%s&directory=%s", FILE_NAME, DIRECTORY);

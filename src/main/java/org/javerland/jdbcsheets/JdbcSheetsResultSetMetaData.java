@@ -9,9 +9,15 @@ import java.sql.SQLException;
  */
 class JdbcSheetsResultSetMetaData implements ResultSetMetaData {
 
+    private final AbstractReader reader;
+
+    public JdbcSheetsResultSetMetaData(AbstractReader reader) {
+        this.reader = reader;
+    }
+
     @Override
     public int getColumnCount() throws SQLException {
-        return 0;
+        return reader.getColumns().size();
     }
 
     @Override
@@ -46,17 +52,18 @@ class JdbcSheetsResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public int getColumnDisplaySize(int column) throws SQLException {
-        return 0;
+        return Integer.MAX_VALUE;
     }
 
     @Override
     public String getColumnLabel(int column) throws SQLException {
-        return "";
+        String alias = reader.getColumns().get(column).getAlias();
+        return alias == null ? reader.getColumns().get(column).getName() : alias;
     }
 
     @Override
     public String getColumnName(int column) throws SQLException {
-        return "";
+        return reader.getColumns().get(column).getName();
     }
 
     @Override
@@ -66,17 +73,17 @@ class JdbcSheetsResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public int getPrecision(int column) throws SQLException {
-        return 0;
+        return -1;
     }
 
     @Override
     public int getScale(int column) throws SQLException {
-        return 0;
+        return -1;
     }
 
     @Override
     public String getTableName(int column) throws SQLException {
-        return "";
+        return reader.getTableName();
     }
 
     @Override
@@ -86,17 +93,17 @@ class JdbcSheetsResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public int getColumnType(int column) throws SQLException {
-        return 0;
+        return reader.getColumns().get(0).getSqlType().id;
     }
 
     @Override
     public String getColumnTypeName(int column) throws SQLException {
-        return "";
+        return "VARCHAR";
     }
 
     @Override
     public boolean isReadOnly(int column) throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -111,7 +118,7 @@ class JdbcSheetsResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public String getColumnClassName(int column) throws SQLException {
-        return "";
+        return String.class.getName();
     }
 
     @Override
