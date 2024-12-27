@@ -18,7 +18,7 @@ public class XlsxQueringTest {
             try (Statement stmt = conn.createStatement()) {
                 try (ResultSet rs = stmt.executeQuery("select A as One1,B,C,D,E from Sheet1 limit 5 offset 0")) {
                     while (rs.next()) {
-                        String name = rs.getString(1);
+                        String name = rs.getString("One1");
                         String surname = rs.getString(2);
                         System.out.println(String.format("%s, %s", name, surname));
                     }

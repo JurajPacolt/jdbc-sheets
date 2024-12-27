@@ -154,52 +154,62 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public String getString(String columnLabel) throws SQLException {
-        return "";
+        int idx = reader.getColumnIndexByName(columnLabel);
+        return getString(idx + 1);
     }
 
     @Override
     public boolean getBoolean(String columnLabel) throws SQLException {
-        return false;
+        int idx = reader.getColumnIndexByName(columnLabel);
+        return getBoolean(idx + 1);
     }
 
     @Override
     public byte getByte(String columnLabel) throws SQLException {
-        return 0;
+        int idx = reader.getColumnIndexByName(columnLabel);
+        return getByte(idx + 1);
     }
 
     @Override
     public short getShort(String columnLabel) throws SQLException {
-        return 0;
+        int idx = reader.getColumnIndexByName(columnLabel);
+        return getShort(idx + 1);
     }
 
     @Override
     public int getInt(String columnLabel) throws SQLException {
-        return 0;
+        int idx = reader.getColumnIndexByName(columnLabel);
+        return getInt(idx + 1);
     }
 
     @Override
     public long getLong(String columnLabel) throws SQLException {
-        return 0;
+        int idx = reader.getColumnIndexByName(columnLabel);
+        return getLong(idx + 1);
     }
 
     @Override
     public float getFloat(String columnLabel) throws SQLException {
-        return 0;
+        int idx = reader.getColumnIndexByName(columnLabel);
+        return getFloat(idx + 1);
     }
 
     @Override
     public double getDouble(String columnLabel) throws SQLException {
-        return 0;
+        int idx = reader.getColumnIndexByName(columnLabel);
+        return getDouble(idx + 1);
     }
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-        return null;
+        int idx = reader.getColumnIndexByName(columnLabel);
+        BigDecimal val = getBigDecimal(idx + 1);
+        return val != null ? val.setScale(scale, BigDecimal.ROUND_HALF_UP) : null;
     }
 
     @Override
     public byte[] getBytes(String columnLabel) throws SQLException {
-        return new byte[0];
+        return null;
     }
 
     @Override
@@ -259,12 +269,14 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public Object getObject(String columnLabel) throws SQLException {
-        return null;
+        int idx = reader.getColumnIndexByName(columnLabel);
+        return getObject(idx + 1);
     }
 
     @Override
     public int findColumn(String columnLabel) throws SQLException {
-        return 0;
+        int idx = reader.getColumnIndexByName(columnLabel);
+        return (idx + 1);
     }
 
     @Override
