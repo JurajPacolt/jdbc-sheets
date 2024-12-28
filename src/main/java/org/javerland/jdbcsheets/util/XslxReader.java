@@ -12,7 +12,6 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.javerland.jdbcsheets.Column;
 import org.javerland.jdbcsheets.enums.ReaderType;
 import org.javerland.jdbcsheets.exception.JdbcSheetsException;
 

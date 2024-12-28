@@ -1,7 +1,6 @@
 /* Created on 22.12.2024 */
 package org.javerland.jdbcsheets.util;
 
-import org.javerland.jdbcsheets.Column;
 import org.javerland.jdbcsheets.enums.ReaderType;
 
 import java.io.File;
