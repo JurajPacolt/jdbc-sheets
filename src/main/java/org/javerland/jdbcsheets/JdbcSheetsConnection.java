@@ -2,6 +2,8 @@
 package org.javerland.jdbcsheets;
 
 import org.apache.commons.lang3.StringUtils;
+import org.javerland.jdbcsheets.enums.ReaderType;
+import org.javerland.jdbcsheets.exception.JdbcSheetsException;
 
 import java.io.File;
 import java.sql.*;

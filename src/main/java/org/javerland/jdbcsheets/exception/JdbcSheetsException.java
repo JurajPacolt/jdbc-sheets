@@ -1,5 +1,5 @@
 /* Created on 14.12.2024 */
-package org.javerland.jdbcsheets;
+package org.javerland.jdbcsheets.exception;
 
 /**
  * @author juraj.pacolt

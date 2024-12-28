@@ -1,5 +1,5 @@
 /* Created on 27.12.2024 */
-package org.javerland.jdbcsheets;
+package org.javerland.jdbcsheets.enums;
 
 /**
  * @author juraj.pacolt

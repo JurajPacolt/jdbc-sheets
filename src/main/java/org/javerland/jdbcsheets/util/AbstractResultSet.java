@@ -1,9 +1,5 @@
-/* Created on 15.12.2024 */
-package org.javerland.jdbcsheets;
-
-import org.javerland.jdbcsheets.exception.JdbcSheetsException;
-import org.javerland.jdbcsheets.util.AbstractReader;
-import org.javerland.jdbcsheets.util.XslxReader;
+/* Created on 28.12.2024 */
+package org.javerland.jdbcsheets.util;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -11,53 +7,30 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
 import java.util.Calendar;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * @author juraj.pacolt
  */
-class JdbcSheetsResultSet implements ResultSet {
+public class AbstractResultSet implements ResultSet {
 
-    private JdbcSheetsConnection connection;
-    private JdbcSheetsStatement stmt;
-    private final String id;
-    private AbstractReader reader;
-    private Object[] actualRow;
-    private String query;
+    List<LinkedHashMap<String, Object>> data;
+    int index = -1;
 
-    public JdbcSheetsResultSet(JdbcSheetsConnection connection, JdbcSheetsStatement stmt, String query) throws SQLException {
-        this.id = UUID.randomUUID().toString();
-        this.connection = connection;
-        this.stmt = stmt;
-        this.query = query;
-        switch (connection.getReaderType()) {
-            case XLSX:
-                reader = new XslxReader(stmt.getFile());
-                break;
-            default:
-                throw new JdbcSheetsException("Unsupported reader type: " + connection.getReaderType());
-        }
-        reader.parseQuery(query);
-    }
-
-    public String getId() {
-        return id;
+    public AbstractResultSet(List<LinkedHashMap<String, Object>> data) {
+        this.data = data;
+        // TODO doriesit vstup pre systemovy resultset
     }
 
     @Override
     public boolean next() throws SQLException {
-        actualRow = reader.next();
-        return actualRow != null;
+        return data != null && (++index < data.size());
     }
 
     @Override
     public void close() throws SQLException {
-        try {
-            reader.close();
-        } finally {
-            stmt.closeResultSet(id);
-        }
     }
 
     @Override
@@ -67,153 +40,133 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public String getString(int columnIndex) throws SQLException {
-        return actualRow[columnIndex - 1] == null ? null : String.valueOf(actualRow[columnIndex - 1]);
+        return data != null ? (data.get(index).get(List.of(data.get(index).keySet()).get(columnIndex)) != null
+                ? (data.get(index).get(List.of(data.get(index).keySet()).get(columnIndex)).toString()) : null) : null;
     }
 
     @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? getString(columnIndex).equals("true") : false;
+        return false;
     }
 
     @Override
     public byte getByte(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Byte.valueOf(value) : -1;
+        return 0;
     }
 
     @Override
     public short getShort(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Short.valueOf(value) : -1;
+        return 0;
     }
 
     @Override
     public int getInt(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Integer.valueOf(value) : -1;
+        return 0;
     }
 
     @Override
     public long getLong(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Long.valueOf(value) : -1;
+        return 0;
     }
 
     @Override
     public float getFloat(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Float.valueOf(value) : -1;
+        return 0;
     }
 
     @Override
     public double getDouble(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Double.valueOf(value) : -1;
+        return 0;
     }
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? new BigDecimal(value) : null;
+        return null;
     }
 
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
-        throw new UnsupportedOperationException();
+        return new byte[0];
     }
 
     @Override
     public Date getDate(int columnIndex) throws SQLException {
-        // TODO ...
         return null;
     }
 
     @Override
     public Time getTime(int columnIndex) throws SQLException {
-        // TODO ...
         return null;
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
-        // TODO ...
         return null;
     }
 
     @Override
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public InputStream getBinaryStream(int columnIndex) throws SQLException {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public String getString(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getString(idx + 1);
+        return "";
     }
 
     @Override
     public boolean getBoolean(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getBoolean(idx + 1);
+        return false;
     }
 
     @Override
     public byte getByte(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getByte(idx + 1);
+        return 0;
     }
 
     @Override
     public short getShort(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getShort(idx + 1);
+        return 0;
     }
 
     @Override
     public int getInt(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getInt(idx + 1);
+        return 0;
     }
 
     @Override
     public long getLong(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getLong(idx + 1);
+        return 0;
     }
 
     @Override
     public float getFloat(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getFloat(idx + 1);
+        return 0;
     }
 
     @Override
     public double getDouble(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getDouble(idx + 1);
+        return 0;
     }
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        BigDecimal val = getBigDecimal(idx + 1);
-        return val != null ? val.setScale(scale, BigDecimal.ROUND_HALF_UP) : null;
+        return null;
     }
 
     @Override
     public byte[] getBytes(String columnLabel) throws SQLException {
-        return null;
+        return new byte[0];
     }
 
     @Override
@@ -263,24 +216,22 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
-        return new JdbcSheetsResultSetMetaData(reader);
+        return null;
     }
 
     @Override
     public Object getObject(int columnIndex) throws SQLException {
-        return getString(columnIndex);
+        return null;
     }
 
     @Override
     public Object getObject(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getObject(idx + 1);
+        return null;
     }
 
     @Override
     public int findColumn(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return (idx + 1);
+        return 0;
     }
 
     @Override
@@ -345,7 +296,7 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public int getRow() throws SQLException {
-        return reader.getRowIndex();
+        return 0;
     }
 
     @Override
@@ -635,7 +586,7 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public Statement getStatement() throws SQLException {
-        return stmt;
+        return null;
     }
 
     @Override

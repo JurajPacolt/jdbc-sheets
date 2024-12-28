@@ -1,6 +1,8 @@
 /* Created on 15.12.2024 */
 package org.javerland.jdbcsheets;
 
+import org.javerland.jdbcsheets.util.AbstractReader;
+
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 

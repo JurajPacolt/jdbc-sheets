@@ -1,5 +1,5 @@
 /* Created on 21.12.2024 */
-package org.javerland.jdbcsheets;
+package org.javerland.jdbcsheets.util;
 
 import org.apache.calcite.avatica.SqlType;
 import org.apache.calcite.sql.*;
@@ -12,6 +12,9 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.javerland.jdbcsheets.Column;
+import org.javerland.jdbcsheets.enums.ReaderType;
+import org.javerland.jdbcsheets.exception.JdbcSheetsException;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +27,7 @@ import java.util.List;
 /**
  * @author juraj.pacolt
  */
-class XslxReader extends AbstractReader {
+public class XslxReader extends AbstractReader {
 
     SqlParser.Config parserConfig = SqlParser.config()
             .withCaseSensitive(false)
