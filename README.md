@@ -3,10 +3,16 @@ JDBC driver for XLSX and others sheets reading
 
 # Example using
 
-## Client example
 ```java
 Class.forName("org.javerland.jdbcsheets.Driver");
-// TODO ...
+
+try (Connection conn = DriverManager.getConnection("jdbc:sheets://?file=./test-data.xlsx")) {
+    // TODO ...
+}
+
+try (Connection conn = DriverManager.getConnection("jdbc:sheets://?database=test-data.xlsx&directory=./")) {
+    // TODO ...
+}
 ```
 
 ## Query
