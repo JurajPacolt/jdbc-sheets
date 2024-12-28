@@ -61,7 +61,7 @@ public class Driver implements java.sql.Driver {
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
         Properties properties = Arrays.stream(getPropertyInfo(url, info))
-                .filter(i -> i != null && i.name != null)
+                .filter(i -> i != null && i.name != null && i.value != null)
                 .collect(Collectors.toMap(
                         i -> i.name,
                         i -> i.value,

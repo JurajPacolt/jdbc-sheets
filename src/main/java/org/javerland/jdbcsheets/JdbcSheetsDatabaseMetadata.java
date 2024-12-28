@@ -9,9 +9,17 @@ import java.sql.*;
 class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     private JdbcSheetsConnection connection;
+    private AbstractReader reader;
 
     public JdbcSheetsDatabaseMetadata(JdbcSheetsConnection connection) {
         this.connection = connection;
+        switch (connection.getReaderType()) {
+            case XLSX:
+                reader = new XslxReader(connection.getSourceFile());
+                break;
+            default:
+                throw new JdbcSheetsException("Unsupported reader type: " + connection.getReaderType());
+        }
     }
 
     @Override

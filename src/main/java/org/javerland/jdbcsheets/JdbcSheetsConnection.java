@@ -32,7 +32,7 @@ class JdbcSheetsConnection implements Connection {
         return ReaderType.valueOf(extension.toUpperCase());
     }
 
-    private File getSourceFile() {
+    protected File getSourceFile() {
         try {
             String file = getClientInfo(DriverInfo.PROP_FILE);
             if (StringUtils.isBlank(file)) {
