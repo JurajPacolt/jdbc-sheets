@@ -24,6 +24,7 @@ from
 limit 10 
 offset 5;
 ```
+Where conditions not supported now.
 
 # How to build
 
