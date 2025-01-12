@@ -1,7 +1,6 @@
 /* Created on 15.12.2024 */
 package org.javerland.jdbcsheets;
 
-import org.apache.calcite.avatica.SqlType;
 import org.javerland.jdbcsheets.exception.JdbcSheetsException;
 import org.javerland.jdbcsheets.util.AbstractReader;
 import org.javerland.jdbcsheets.util.Column;
@@ -641,12 +640,12 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
                 .map(s -> new Object[] { null, null, "", "TABLE", null, null, null, null, null, null })
                 .collect(Collectors.toList()));
         return new SystemResultSet(
-                List.of(new Column("TABLE_CAT", SqlType.VARCHAR), new Column("TABLE_SCHEM", SqlType.VARCHAR),
-                        new Column("TABLE_NAME", SqlType.VARCHAR), new Column("TABLE_TYPE", SqlType.VARCHAR),
-                        new Column("REMARKS", SqlType.VARCHAR), new Column("TYPE_CAT", SqlType.VARCHAR),
-                        new Column("TYPE_SCHEM", SqlType.VARCHAR), new Column("TYPE_NAME", SqlType.VARCHAR),
-                        new Column("SELF_REFERENCING_COL_NAME", SqlType.VARCHAR),
-                        new Column("REF_GENERATION", SqlType.VARCHAR)), data);
+                List.of(new Column("TABLE_CAT", Types.VARCHAR), new Column("TABLE_SCHEM", Types.VARCHAR),
+                        new Column("TABLE_NAME", Types.VARCHAR), new Column("TABLE_TYPE", Types.VARCHAR),
+                        new Column("REMARKS", Types.VARCHAR), new Column("TYPE_CAT", Types.VARCHAR),
+                        new Column("TYPE_SCHEM", Types.VARCHAR), new Column("TYPE_NAME", Types.VARCHAR),
+                        new Column("SELF_REFERENCING_COL_NAME", Types.VARCHAR),
+                        new Column("REF_GENERATION", Types.VARCHAR)), data);
     }
 
     @Override
@@ -663,7 +662,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
     public ResultSet getTableTypes() throws SQLException {
         List<Object[]> data = new ArrayList<>();
         data.add(new Object[] { "TABLE" });
-        return new SystemResultSet(List.of(new Column("TABLE_TYPE", SqlType.VARCHAR)), data);
+        return new SystemResultSet(List.of(new Column("TABLE_TYPE", Types.VARCHAR)), data);
     }
 
     @Override
@@ -672,24 +671,23 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
         // TODO doriesit ...
         List<Object[]> data = new ArrayList<>();
         reader.getSheets().forEach(table -> {
-            data.add(new Object[] { null, null, table, "", 0, "", Integer.MAX_VALUE, null, null, null, null, null, null, null,
-                    null, null, 1, "YES", null, null, null, null, "NO", "NO" });
+            data.add(new Object[] { null, null, table, "", 0, "", Integer.MAX_VALUE, null, null, null, null, null, null,
+                    null, null, null, 1, "YES", null, null, null, null, "NO", "NO" });
         });
         return new SystemResultSet(
-                List.of(new Column("TABLE_CAT", SqlType.VARCHAR), new Column("TABLE_SCHEM", SqlType.VARCHAR),
-                        new Column("TABLE_NAME", SqlType.VARCHAR), new Column("COLUMN_NAME", SqlType.VARCHAR),
-                        new Column("DATA_TYPE", SqlType.INTEGER), new Column("TYPE_NAME", SqlType.VARCHAR),
-                        new Column("COLUMN_SIZE", SqlType.INTEGER), new Column("BUFFER_LENGTH", SqlType.INTEGER),
-                        new Column("DECIMAL_DIGITS", SqlType.INTEGER), new Column("NUM_PREC_RADIX", SqlType.INTEGER),
-                        new Column("NULLABLE", SqlType.INTEGER), new Column("REMARKS", SqlType.VARCHAR),
-                        new Column("COLUMN_DEF", SqlType.VARCHAR), new Column("SQL_DATA_TYPE", SqlType.INTEGER),
-                        new Column("SQL_DATETIME_SUB", SqlType.INTEGER),
-                        new Column("CHAR_OCTET_LENGTH", SqlType.INTEGER),
-                        new Column("ORDINAL_POSITION", SqlType.INTEGER), new Column("IS_NULLABLE", SqlType.VARCHAR),
-                        new Column("SCOPE_CATALOG", SqlType.VARCHAR), new Column("SCOPE_SCHEMA", SqlType.VARCHAR),
-                        new Column("SCOPE_TABLE", SqlType.VARCHAR), new Column("SOURCE_DATA_TYPE", SqlType.INTEGER),
-                        new Column("IS_AUTOINCREMENT", SqlType.VARCHAR),
-                        new Column("IS_GENERATEDCOLUMN", SqlType.VARCHAR)), data);
+                List.of(new Column("TABLE_CAT", Types.VARCHAR), new Column("TABLE_SCHEM", Types.VARCHAR),
+                        new Column("TABLE_NAME", Types.VARCHAR), new Column("COLUMN_NAME", Types.VARCHAR),
+                        new Column("DATA_TYPE", Types.INTEGER), new Column("TYPE_NAME", Types.VARCHAR),
+                        new Column("COLUMN_SIZE", Types.INTEGER), new Column("BUFFER_LENGTH", Types.INTEGER),
+                        new Column("DECIMAL_DIGITS", Types.INTEGER), new Column("NUM_PREC_RADIX", Types.INTEGER),
+                        new Column("NULLABLE", Types.INTEGER), new Column("REMARKS", Types.VARCHAR),
+                        new Column("COLUMN_DEF", Types.VARCHAR), new Column("SQL_DATA_TYPE", Types.INTEGER),
+                        new Column("SQL_DATETIME_SUB", Types.INTEGER), new Column("CHAR_OCTET_LENGTH", Types.INTEGER),
+                        new Column("ORDINAL_POSITION", Types.INTEGER), new Column("IS_NULLABLE", Types.VARCHAR),
+                        new Column("SCOPE_CATALOG", Types.VARCHAR), new Column("SCOPE_SCHEMA", Types.VARCHAR),
+                        new Column("SCOPE_TABLE", Types.VARCHAR), new Column("SOURCE_DATA_TYPE", Types.INTEGER),
+                        new Column("IS_AUTOINCREMENT", Types.VARCHAR), new Column("IS_GENERATEDCOLUMN", Types.VARCHAR)),
+                data);
     }
 
     @Override

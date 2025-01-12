@@ -1,8 +1,6 @@
 /* Created on 27.12.2024 */
 package org.javerland.jdbcsheets.util;
 
-import org.apache.calcite.avatica.SqlType;
-
 import java.util.Objects;
 
 /**
@@ -12,15 +10,15 @@ public class Column {
 
     private String name;
     private String alias;
-    private SqlType sqlType;
+    private int sqlType;
 
-    public Column(String name, String alias, SqlType sqlType) {
+    public Column(String name, String alias, int sqlType) {
         this.name = name;
         this.alias = alias;
         this.sqlType = sqlType;
     }
 
-    public Column(String name, SqlType sqlType) {
+    public Column(String name, int sqlType) {
         this.name = name;
         this.alias = alias;
         this.sqlType = sqlType;
@@ -45,11 +43,11 @@ public class Column {
         this.alias = alias;
     }
 
-    public SqlType getSqlType() {
+    public int getSqlType() {
         return sqlType;
     }
 
-    public void setSqlType(SqlType sqlType) {
+    public void setSqlType(int sqlType) {
         this.sqlType = sqlType;
     }
 

@@ -1,11 +1,11 @@
 /* Created on 21.12.2024 */
 package org.javerland.jdbcsheets.util;
 
-import org.apache.calcite.avatica.SqlType;
-import org.apache.calcite.sql.*;
-import org.apache.calcite.sql.parser.SqlParseException;
-import org.apache.calcite.sql.parser.SqlParser;
-import org.apache.calcite.sql.validate.SqlConformanceEnum;
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.select.*;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -28,9 +29,6 @@ import java.util.List;
  */
 public class XslxReader extends AbstractReader {
 
-    SqlParser.Config parserConfig = SqlParser.config()
-            .withCaseSensitive(false)
-            .withConformance(SqlConformanceEnum.MYSQL_5);
     XSSFSheet sheet = null;
     XSSFWorkbook workbook = null;
 
@@ -70,76 +68,66 @@ public class XslxReader extends AbstractReader {
             result.add(value);
         });
         index++;
-        return result.toArray(new Object[]{});
+        return result.toArray(new Object[] {});
     }
 
     @Override
     public void parseQuery(String query) throws SQLException {
         try {
-            SqlParser parser = SqlParser.create(query, parserConfig);
-
-            SqlSelect select = null;
-            SqlOrderBy orderBy = null;
-            SqlNode parsed = (SqlNode) parser.parseQuery();
-            if (parsed instanceof SqlOrderBy) {
-                orderBy = (SqlOrderBy) parsed;
-                select = (SqlSelect) orderBy.query;
-            } else {
-                select = (SqlSelect) parsed;
-            }
+            Select selectStatement = (Select) CCJSqlParserUtil.parse(query);
+            PlainSelect plainSelect = (PlainSelect) selectStatement.getSelectBody();
 
             // Columns from sheet, if * all columns returned.
-            SqlNodeList selectList = select.getSelectList();
-            for (SqlNode node : selectList) {
-                if (node instanceof SqlIdentifier) {
-                    SqlIdentifier ident = (SqlIdentifier) node;
-                    String columnName = ident.names.get(0);
-                    columns.add(new Column(columnName.toUpperCase(), null, SqlType.VARCHAR));
-                } else if (node instanceof SqlBasicCall) {
-                    SqlBasicCall call = (SqlBasicCall) node;
-                    if (call.getOperator() != null && call.getOperator().toString().toUpperCase().equals("AS")) {
-                        String columnName = call.getOperandList().get(0).toString();
-                        String columnAlias = call.getOperandList().get(1).toString();
-                        columns.add(new Column(columnName.toUpperCase(), columnAlias, SqlType.VARCHAR));
-                    }
+            for (SelectItem selectItem : plainSelect.getSelectItems()) {
+                if (selectItem.getExpression() instanceof Column) {
+                    Column column = (Column) selectItem.getExpression();
+                    String columnName = column.getName();
+                    String alias = selectItem.getAlias() != null ? selectItem.getAlias().getName() : null;
+                    columns.add(new Column(columnName.toUpperCase(), alias, Types.VARCHAR));
+                } else {
+                    String alias = selectItem.getAlias() != null ? selectItem.getAlias().getName() : null;
+                    columns.add(new Column(alias.toUpperCase(), null, Types.VARCHAR));
                 }
             }
 
             // Table is sheet ...
-            SqlNode from = select.getFrom();
-            SqlIdentifier tableName;
-            if (from instanceof SqlIdentifier) {
-                tableName = (SqlIdentifier) from;
-                this.tableName = tableName.toString();
+            FromItem from = plainSelect.getFromItem();
+            Table table = null;
+            if (from instanceof Table) {
+                table = (Table) from;
+                this.tableName = table.getName();
             } else {
                 throw new JdbcSheetsException("Others identifiers not supported now.");
             }
 
             // Where condition, simple filter for data from sheet.
-            SqlNode where = select.getWhere();
-            if (where != null) {
+            Expression whereClause = plainSelect.getWhere();
+            if (whereClause != null) {
                 // TODO For now we don't need, bud it's needed to finish to the future ...
             }
 
-            offset = orderBy != null && orderBy.offset != null ? Integer.valueOf(orderBy.offset.toString())
-                    : (select.getOffset() != null ? Integer.valueOf(select.getOffset().toString()) : null);
-            if (offset != null) {
-                index = offset;
+            Limit limitClause = plainSelect.getLimit();
+            if (limitClause != null) {
+                offset = limitClause.getOffset() != null ? Integer.valueOf(limitClause.getOffset().toString()) : null;
+                if (offset != null) {
+                    index = offset;
+                }
+                limit = limitClause.getRowCount() != null ?
+                        Integer.valueOf(limitClause.getRowCount().toString()) :
+                        null;
             }
-            limit = orderBy != null && orderBy.fetch != null ? Integer.valueOf(orderBy.fetch.toString())
-                    : (select.getFetch() != null ? Integer.valueOf(select.getFetch().toString()) : null);
 
             try {
                 workbook = new XSSFWorkbook(Files.newInputStream(file.toPath()), false);
-                sheet = workbook.getSheet(tableName.getSimple());
+                sheet = workbook.getSheet(tableName);
                 if (sheet == null) {
-                    throw new SQLException(String.format("Sheet with name \"%s\" doesn't exists.", tableName.getSimple()));
+                    throw new SQLException(String.format("Sheet with name \"%s\" doesn't exists.", tableName));
                 }
             } catch (IOException ex) {
                 throw new SQLException(ex.getMessage(), ex);
             }
 
-        } catch (SqlParseException ex) {
+        } catch (JSQLParserException ex) {
             throw new SQLException(ex.getMessage(), ex);
         }
     }

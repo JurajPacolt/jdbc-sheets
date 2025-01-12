@@ -95,7 +95,7 @@ class JdbcSheetsResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public int getColumnType(int column) throws SQLException {
-        return reader.getColumns().get(0).getSqlType().id;
+        return reader.getColumns().get(0).getSqlType();
     }
 
     @Override

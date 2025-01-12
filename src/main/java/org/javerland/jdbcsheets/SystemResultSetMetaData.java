@@ -1,8 +1,10 @@
 /* Created on 11.01.2025 */
 package org.javerland.jdbcsheets;
 
+import java.lang.reflect.Field;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 
 /**
  * @author juraj.pacolt
@@ -93,12 +95,25 @@ class SystemResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public int getColumnType(int column) throws SQLException {
-        return resultSet.getColumns().get(column).getSqlType().id;
+        return resultSet.getColumns().get(column).getSqlType();
     }
 
     @Override
     public String getColumnTypeName(int column) throws SQLException {
-        return resultSet.getColumns().get(column).getSqlType().name();
+        int sqlType = resultSet.getColumns().get(column).getSqlType();
+        for (Field field : Types.class.getFields()) {
+            if (field.getType() == int.class) {
+                try {
+                    int typeValue = field.getInt(null);
+                    if (typeValue == sqlType) {
+                        return field.getName();
+                    }
+                } catch (IllegalAccessException ex) {
+                    // ignored
+                }
+            }
+        }
+        return null;
     }
 
     @Override
@@ -121,7 +136,8 @@ class SystemResultSetMetaData implements ResultSetMetaData {
         if (resultSet.getData().size() > 0 && resultSet.getData().get(0)[column] != null) {
             return resultSet.getData().get(0)[column].getClass().getName();
         }
-        return resultSet.getColumns().get(column).getSqlType().name();
+        int sqlType = resultSet.getColumns().get(column).getSqlType();
+        return getColumnTypeName(sqlType);
     }
 
     @Override
