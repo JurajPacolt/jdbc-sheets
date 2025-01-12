@@ -79,9 +79,9 @@ public class XslxReader extends AbstractReader {
 
             // Columns from sheet, if * all columns returned.
             for (SelectItem selectItem : plainSelect.getSelectItems()) {
-                if (selectItem.getExpression() instanceof Column) {
-                    Column column = (Column) selectItem.getExpression();
-                    String columnName = column.getName();
+                if (selectItem.getExpression() instanceof net.sf.jsqlparser.schema.Column) {
+                    net.sf.jsqlparser.schema.Column column = (net.sf.jsqlparser.schema.Column) selectItem.getExpression();
+                    String columnName = column.getColumnName();
                     String alias = selectItem.getAlias() != null ? selectItem.getAlias().getName() : null;
                     columns.add(new Column(columnName.toUpperCase(), alias, Types.VARCHAR));
                 } else {
@@ -108,7 +108,7 @@ public class XslxReader extends AbstractReader {
 
             Limit limitClause = plainSelect.getLimit();
             if (limitClause != null) {
-                offset = limitClause.getOffset() != null ? Integer.valueOf(limitClause.getOffset().toString()) : null;
+                offset = limitClause.getOffset() != null ? Integer.valueOf(limitClause.getOffset().toString()) : 0;
                 if (offset != null) {
                     index = offset;
                 }
