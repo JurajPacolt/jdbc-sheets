@@ -5,7 +5,7 @@ JDBC driver for XLSX and others sheets reading
 
 For example file `test-data.xlsx` with `Sheet1` and those data.
 
-_The data is generated purely randomly using AI. It does not contain real personal data._
+_The data are generated purely randomly using AI. It does not contain real personal data._
 
 <img src="./src/test/resources/data-image.png">
 
