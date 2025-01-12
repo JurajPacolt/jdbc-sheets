@@ -18,7 +18,7 @@ from
 limit 5 
 offset 0;
 ```
-WHERE conditions not supported, yet.
+WHERE conditions, ORDER BY clause, and others standards like GROUP BY etc., not supported, yet.
 
 ## Example how to read
 
