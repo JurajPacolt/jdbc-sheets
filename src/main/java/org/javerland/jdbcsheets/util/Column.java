@@ -20,6 +20,12 @@ public class Column {
         this.sqlType = sqlType;
     }
 
+    public Column(String name, SqlType sqlType) {
+        this.name = name;
+        this.alias = alias;
+        this.sqlType = sqlType;
+    }
+
     public Column() {
     }
 
@@ -49,7 +55,8 @@ public class Column {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Column column = (Column) o;
         return Objects.equals(name, column.name) && Objects.equals(alias, column.alias) && sqlType == column.sqlType;
     }

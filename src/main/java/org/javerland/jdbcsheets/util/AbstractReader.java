@@ -44,8 +44,8 @@ public abstract class AbstractReader {
 
     public int getColumnIndexByName(String columnName) {
         for (int i = 0; i < columns.size(); i++) {
-            if (columns.get(i).getAlias() != null
-                    && columnName.toUpperCase().equals(columns.get(i).getAlias().toUpperCase())) {
+            if (columns.get(i).getAlias() != null && columnName.toUpperCase()
+                    .equals(columns.get(i).getAlias().toUpperCase())) {
                 return i;
             } else if (columnName.equals(columns.get(i).getName())) {
                 return i;

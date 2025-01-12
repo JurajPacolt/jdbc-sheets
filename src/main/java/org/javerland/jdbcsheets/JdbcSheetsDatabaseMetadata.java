@@ -1,11 +1,16 @@
 /* Created on 15.12.2024 */
 package org.javerland.jdbcsheets;
 
+import org.apache.calcite.avatica.SqlType;
 import org.javerland.jdbcsheets.exception.JdbcSheetsException;
 import org.javerland.jdbcsheets.util.AbstractReader;
+import org.javerland.jdbcsheets.util.Column;
 import org.javerland.jdbcsheets.util.XslxReader;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author juraj.pacolt
@@ -617,88 +622,129 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
     }
 
     @Override
-    public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException {
-        return null;
+    public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
+            throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
-    public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern) throws SQLException {
-        return null;
+    public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern,
+            String columnNamePattern) throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
-    public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException {
-        return null;
+    public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types)
+            throws SQLException {
+        List<Object[]> data = new ArrayList<>();
+        data.addAll(reader.getSheets().stream()
+                .map(s -> new Object[] { null, null, "", "TABLE", null, null, null, null, null, null })
+                .collect(Collectors.toList()));
+        return new SystemResultSet(
+                List.of(new Column("TABLE_CAT", SqlType.VARCHAR), new Column("TABLE_SCHEM", SqlType.VARCHAR),
+                        new Column("TABLE_NAME", SqlType.VARCHAR), new Column("TABLE_TYPE", SqlType.VARCHAR),
+                        new Column("REMARKS", SqlType.VARCHAR), new Column("TYPE_CAT", SqlType.VARCHAR),
+                        new Column("TYPE_SCHEM", SqlType.VARCHAR), new Column("TYPE_NAME", SqlType.VARCHAR),
+                        new Column("SELF_REFERENCING_COL_NAME", SqlType.VARCHAR),
+                        new Column("REF_GENERATION", SqlType.VARCHAR)), data);
     }
 
     @Override
     public ResultSet getSchemas() throws SQLException {
-        return null;
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
     public ResultSet getCatalogs() throws SQLException {
-        return null;
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
     public ResultSet getTableTypes() throws SQLException {
-        return null;
+        List<Object[]> data = new ArrayList<>();
+        data.add(new Object[] { "TABLE" });
+        return new SystemResultSet(List.of(new Column("TABLE_TYPE", SqlType.VARCHAR)), data);
     }
 
     @Override
-    public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
-        return null;
+    public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
+            throws SQLException {
+        // TODO doriesit ...
+        List<Object[]> data = new ArrayList<>();
+        reader.getSheets().forEach(table -> {
+            data.add(new Object[] { null, null, table, "", 0, "", Integer.MAX_VALUE, null, null, null, null, null, null, null,
+                    null, null, 1, "YES", null, null, null, null, "NO", "NO" });
+        });
+        return new SystemResultSet(
+                List.of(new Column("TABLE_CAT", SqlType.VARCHAR), new Column("TABLE_SCHEM", SqlType.VARCHAR),
+                        new Column("TABLE_NAME", SqlType.VARCHAR), new Column("COLUMN_NAME", SqlType.VARCHAR),
+                        new Column("DATA_TYPE", SqlType.INTEGER), new Column("TYPE_NAME", SqlType.VARCHAR),
+                        new Column("COLUMN_SIZE", SqlType.INTEGER), new Column("BUFFER_LENGTH", SqlType.INTEGER),
+                        new Column("DECIMAL_DIGITS", SqlType.INTEGER), new Column("NUM_PREC_RADIX", SqlType.INTEGER),
+                        new Column("NULLABLE", SqlType.INTEGER), new Column("REMARKS", SqlType.VARCHAR),
+                        new Column("COLUMN_DEF", SqlType.VARCHAR), new Column("SQL_DATA_TYPE", SqlType.INTEGER),
+                        new Column("SQL_DATETIME_SUB", SqlType.INTEGER),
+                        new Column("CHAR_OCTET_LENGTH", SqlType.INTEGER),
+                        new Column("ORDINAL_POSITION", SqlType.INTEGER), new Column("IS_NULLABLE", SqlType.VARCHAR),
+                        new Column("SCOPE_CATALOG", SqlType.VARCHAR), new Column("SCOPE_SCHEMA", SqlType.VARCHAR),
+                        new Column("SCOPE_TABLE", SqlType.VARCHAR), new Column("SOURCE_DATA_TYPE", SqlType.INTEGER),
+                        new Column("IS_AUTOINCREMENT", SqlType.VARCHAR),
+                        new Column("IS_GENERATEDCOLUMN", SqlType.VARCHAR)), data);
     }
 
     @Override
-    public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
-        return null;
+    public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern)
+            throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
-    public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-        return null;
+    public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern)
+            throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
-    public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
-        return null;
+    public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable)
+            throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
     public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
-        return null;
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
     public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
-        return null;
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
     public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
-        return null;
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
     public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
-        return null;
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
-    public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
-        return null;
+    public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable,
+            String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
     public ResultSet getTypeInfo() throws SQLException {
-        return null;
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
-    public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
-        return null;
+    public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate)
+            throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
@@ -762,13 +808,14 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
     }
 
     @Override
-    public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException {
-        return null;
+    public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types)
+            throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
     public Connection getConnection() throws SQLException {
-        return null;
+        return connection;
     }
 
     @Override
@@ -793,17 +840,18 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
-        return null;
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
     public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-        return null;
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
-    public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws SQLException {
-        return null;
+    public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern,
+            String attributeNamePattern) throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
@@ -858,7 +906,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
-        return null;
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
@@ -873,22 +921,25 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
-        return null;
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
-    public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
-        return null;
+    public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern)
+            throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
-    public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern) throws SQLException {
-        return null;
+    public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern,
+            String columnNamePattern) throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
-    public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException {
-        return null;
+    public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern,
+            String columnNamePattern) throws SQLException {
+        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
     }
 
     @Override
