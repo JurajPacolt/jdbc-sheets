@@ -7,6 +7,8 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.*;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -139,6 +141,33 @@ public class XslxReader extends AbstractReader {
                 throw new JdbcSheetsException(ex.getMessage(), ex);
             }
         }
+    }
+
+    @Override
+    public List<Column> listColumnsBySheetName(String sheetName) {
+        List<Column> result = new ArrayList<>();
+        try (XSSFWorkbook workbook = new XSSFWorkbook(file)) {
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+            Row headerRow = sheet.getRow(0);
+            if (headerRow != null) {
+                for (Cell cell : headerRow) {
+                    result.add(new Column(getColumnName(cell.getColumnIndex()), null, Types.VARCHAR));
+                }
+            }
+        } catch (IOException | InvalidFormatException ex) {
+            throw new JdbcSheetsException(ex.getMessage(), ex);
+        }
+        return result;
+    }
+
+    String getColumnName(int columnIndex) {
+        StringBuilder columnName = new StringBuilder();
+        while (columnIndex >= 0) {
+            int remainder = columnIndex % 26;
+            columnName.insert(0, (char) (remainder + 'A'));
+            columnIndex = (columnIndex / 26) - 1;
+        }
+        return columnName.toString();
     }
 
     @Override

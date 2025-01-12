@@ -30,6 +30,8 @@ public abstract class AbstractReader {
 
     public abstract ReaderType getType();
 
+    public abstract List<Column> listColumnsBySheetName(String sheetName);
+
     public int getRowIndex() {
         return index;
     }

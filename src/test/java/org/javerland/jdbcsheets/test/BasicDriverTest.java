@@ -6,10 +6,7 @@ import org.javerland.jdbcsheets.test.constants.TestConstants;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 
 /**
  * @author juraj.pacolt
@@ -43,7 +40,27 @@ public class BasicDriverTest {
             boolean driverName = dmd.getDriverName().equals(DriverInfo.DRIVER_NAME);
             boolean driverVersion = dmd.getDriverVersion().equals(DriverInfo.DRIVER_VERSION);
             boolean url = dmd.getURL().equals(TestConstants.URL_WITH_FILE);
-            Assertions.assertTrue(driverName && driverVersion && url);
+
+            String expected = "Sheet1,";
+            StringBuilder found = new StringBuilder();
+            try (ResultSet rs = dmd.getTables(null, null, null, null)) {
+                while (rs.next()) {
+                    String tableName = rs.getString("TABLE_NAME");
+                    found.append(tableName).append(",");
+                }
+            }
+
+            String expectedColumns = "A,B,C,D,E,";
+            StringBuilder foundColumns = new StringBuilder();
+            try (ResultSet rs = dmd.getColumns(null, null, "Sheet1", null)) {
+                while (rs.next()) {
+                    String columnName = rs.getString("COLUMN_NAME");
+                    foundColumns.append(columnName).append(",");
+                }
+            }
+
+            Assertions.assertTrue(driverName && driverVersion && url && expected.contentEquals(
+                    found) && expectedColumns.contentEquals(foundColumns));
         }
     }
 }

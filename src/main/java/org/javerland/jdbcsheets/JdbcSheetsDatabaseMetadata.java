@@ -1,9 +1,11 @@
 /* Created on 15.12.2024 */
 package org.javerland.jdbcsheets;
 
+import org.apache.commons.lang3.StringUtils;
 import org.javerland.jdbcsheets.exception.JdbcSheetsException;
 import org.javerland.jdbcsheets.util.AbstractReader;
 import org.javerland.jdbcsheets.util.Column;
+import org.javerland.jdbcsheets.util.SqlTypeUtils;
 import org.javerland.jdbcsheets.util.XslxReader;
 
 import java.sql.*;
@@ -636,9 +638,11 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
     public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types)
             throws SQLException {
         List<Object[]> data = new ArrayList<>();
-        data.addAll(reader.getSheets().stream()
-                .map(s -> new Object[] { null, null, "", "TABLE", null, null, null, null, null, null })
-                .collect(Collectors.toList()));
+        reader.getSheets().forEach(sheet -> {
+            data.addAll(reader.getSheets().stream()
+                    .map(s -> new Object[] { null, null, sheet, "TABLE", null, null, null, null, null, null })
+                    .collect(Collectors.toList()));
+        });
         return new SystemResultSet(
                 List.of(new Column("TABLE_CAT", Types.VARCHAR), new Column("TABLE_SCHEM", Types.VARCHAR),
                         new Column("TABLE_NAME", Types.VARCHAR), new Column("TABLE_TYPE", Types.VARCHAR),
@@ -668,12 +672,17 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
             throws SQLException {
-        // TODO doriesit ...
         List<Object[]> data = new ArrayList<>();
-        reader.getSheets().forEach(table -> {
-            data.add(new Object[] { null, null, table, "", 0, "", Integer.MAX_VALUE, null, null, null, null, null, null,
-                    null, null, null, 1, "YES", null, null, null, null, "NO", "NO" });
-        });
+        for (String tableName : reader.getSheets()) {
+            if (StringUtils.isNotBlank(tableNamePattern) && !tableNamePattern.equalsIgnoreCase(tableName)) {
+                continue;
+            }
+            reader.listColumnsBySheetName(tableName).forEach(column -> {
+                data.add(new Object[] { null, null, tableName, column.getName(), column.getSqlType(),
+                        SqlTypeUtils.toSqlType(column.getSqlType()), Integer.MAX_VALUE, null, null, null, null, null,
+                        null, null, null, null, 1, "YES", null, null, null, null, "NO", "NO" });
+            });
+        }
         return new SystemResultSet(
                 List.of(new Column("TABLE_CAT", Types.VARCHAR), new Column("TABLE_SCHEM", Types.VARCHAR),
                         new Column("TABLE_NAME", Types.VARCHAR), new Column("COLUMN_NAME", Types.VARCHAR),
