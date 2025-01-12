@@ -15,8 +15,8 @@ select
     A as "Col1", B, C, D, E 
 from 
     Sheet1 
-limit 10 
-offset 5;
+limit 5 
+offset 0;
 ```
 WHERE conditions not supported, yet.
 
