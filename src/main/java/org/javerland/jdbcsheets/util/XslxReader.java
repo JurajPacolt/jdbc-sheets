@@ -109,9 +109,7 @@ public class XslxReader extends AbstractReader {
             Limit limitClause = plainSelect.getLimit();
             if (limitClause != null) {
                 offset = limitClause.getOffset() != null ? Integer.valueOf(limitClause.getOffset().toString()) : 0;
-                if (offset != null) {
-                    index = offset;
-                }
+                index = offset;
                 limit = limitClause.getRowCount() != null ?
                         Integer.valueOf(limitClause.getRowCount().toString()) :
                         null;
