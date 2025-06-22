@@ -18,7 +18,7 @@ public class SqlTypeUtils {
                         return field.getName();
                     }
                 } catch (IllegalAccessException ex) {
-                    // ignored
+                    // Ignore this exception, as we are just trying to find a matching type
                 }
             }
         }
