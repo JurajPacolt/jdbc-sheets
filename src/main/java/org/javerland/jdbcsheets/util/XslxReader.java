@@ -55,22 +55,35 @@ public class XslxReader extends AbstractReader {
 
     @Override
     public Object[] next() {
-        if (offset != null && limit != null && index > (offset + Math.abs(limit - 1))) {
-            return null;
+        while (true) {
+            if (offset != null && limit != null && index > (offset + Math.abs(limit - 1))) {
+                return null;
+            }
+            XSSFRow row = sheet.getRow(index);
+            if (row == null) {
+                return null;
+            }
+            
+            List<Object> result = new ArrayList<>();
+            columns.forEach(column -> {
+                int idx = getColumnIndexFromName(column.getName());
+                XSSFCell cell = row.getCell(idx);
+                String value = cell != null ? cell.getStringCellValue() : null;
+                result.add(value);
+            });
+            
+            Object[] rowData = result.toArray(new Object[] {});
+            index++;
+            
+            if (whereExpression != null) {
+                WhereEvaluator evaluator = new WhereEvaluator(rowData, columns);
+                if (!evaluator.evaluate(whereExpression)) {
+                    continue;
+                }
+            }
+            
+            return rowData;
         }
-        List<Object> result = new ArrayList<>();
-        XSSFRow row = sheet.getRow(index);
-        if (row == null) {
-            return null;
-        }
-        columns.forEach(column -> {
-            int idx = getColumnIndexFromName(column.getName());
-            XSSFCell cell = row.getCell(idx);
-            String value = cell != null ? cell.getStringCellValue() : null;
-            result.add(value);
-        });
-        index++;
-        return result.toArray(new Object[] {});
     }
 
     @Override
@@ -103,10 +116,7 @@ public class XslxReader extends AbstractReader {
             }
 
             // Where condition, simple filter for data from sheet.
-            Expression whereClause = plainSelect.getWhere();
-            if (whereClause != null) {
-                // TODO For now we don't need, bud it's needed to finish to the future ...
-            }
+            whereExpression = plainSelect.getWhere();
 
             Limit limitClause = plainSelect.getLimit();
             if (limitClause != null) {

@@ -9,16 +9,19 @@ _The data are generated purely randomly using AI. It does not contain real perso
 
 <img src="./src/test/resources/data-image.png">
 
-## Potencional query
+## Potential query
 ```mysql
 select 
     A as "Col1", B, C, D, E 
 from 
     Sheet1 
+where
+    A = 'Melissa' and B = 'Perry'
 limit 5 
 offset 0;
 ```
-WHERE conditions, ORDER BY clause, and others standards like GROUP BY etc., not supported, yet.
+Supports WHERE conditions with comparison operators (=, !=, <, >, <=, >=), logical operators (AND, OR, NOT), LIKE patterns, and IS NULL checks.
+ORDER BY, GROUP BY, and other advanced SQL clauses are not supported yet.
 
 ## Example how to read
 

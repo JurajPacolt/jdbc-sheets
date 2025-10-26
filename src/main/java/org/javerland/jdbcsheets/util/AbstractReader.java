@@ -1,6 +1,7 @@
 /* Created on 22.12.2024 */
 package org.javerland.jdbcsheets.util;
 
+import net.sf.jsqlparser.expression.Expression;
 import org.javerland.jdbcsheets.enums.ReaderType;
 
 import java.io.File;
@@ -19,6 +20,7 @@ public abstract class AbstractReader {
     Integer limit = null;
     int index = 0;
     String tableName = null;
+    Expression whereExpression = null;
 
     public abstract List<String> getSheets();
 
