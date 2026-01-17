@@ -66,7 +66,9 @@ class JdbcSheetsResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public String getColumnName(int column) throws SQLException {
-        return reader.getColumns().get(toIndex(column)).getName();
+        int idx = toIndex(column);
+        String alias = reader.getColumns().get(idx).getAlias();
+        return alias == null ? reader.getColumns().get(idx).getName() : alias;
     }
 
     @Override

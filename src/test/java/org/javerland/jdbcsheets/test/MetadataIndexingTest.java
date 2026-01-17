@@ -21,7 +21,7 @@ public class MetadataIndexingTest {
                     ResultSetMetaData meta = rs.getMetaData();
                     Assertions.assertEquals(2, meta.getColumnCount());
                     Assertions.assertEquals("Col1", meta.getColumnLabel(1));
-                    Assertions.assertEquals("A", meta.getColumnName(1));
+                    Assertions.assertEquals("Col1", meta.getColumnName(1));
                     Assertions.assertEquals("B", meta.getColumnLabel(2));
                     Assertions.assertEquals("B", meta.getColumnName(2));
                 }

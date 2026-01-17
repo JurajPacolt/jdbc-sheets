@@ -673,11 +673,14 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
             if (StringUtils.isNotBlank(tableNamePattern) && !tableNamePattern.equalsIgnoreCase(tableName)) {
                 continue;
             }
-            reader.listColumnsBySheetName(tableName).forEach(column -> {
+            List<Column> tableColumns = reader.listColumnsBySheetName(tableName);
+            for (int i = 0; i < tableColumns.size(); i++) {
+                Column column = tableColumns.get(i);
                 data.add(new Object[] { null, null, tableName, column.getName(), column.getSqlType(),
-                        SqlTypeUtils.toSqlType(column.getSqlType()), Integer.MAX_VALUE, null, null, null, null, null,
-                        null, null, null, null, 1, "YES", null, null, null, null, "NO", "NO" });
-            });
+                        SqlTypeUtils.toSqlType(column.getSqlType()), Integer.MAX_VALUE, 0, 0, 10,
+                        DatabaseMetaData.columnNullable, null, null, 0, 0, 0, i + 1, "YES", null, null, null, 0,
+                        "NO", "NO" });
+            }
         }
         return new SystemResultSet(
                 List.of(new Column("TABLE_CAT", Types.VARCHAR), new Column("TABLE_SCHEM", Types.VARCHAR),
@@ -720,7 +723,11 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return new SystemResultSet(
+                List.of(new Column("TABLE_CAT", Types.VARCHAR), new Column("TABLE_SCHEM", Types.VARCHAR),
+                        new Column("TABLE_NAME", Types.VARCHAR), new Column("COLUMN_NAME", Types.VARCHAR),
+                        new Column("KEY_SEQ", Types.SMALLINT), new Column("PK_NAME", Types.VARCHAR)),
+                new ArrayList<>());
     }
 
     @Override
