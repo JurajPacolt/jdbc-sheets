@@ -853,17 +853,17 @@ class SystemResultSet implements ResultSet {
 
     @Override
     public Object getObject(String columnLabel) throws SQLException {
-        return data.get(row)[findColumn(columnLabel)];
+        return data.get(row)[findColumn(columnLabel) - 1];
     }
 
     @Override
     public int findColumn(String columnLabel) throws SQLException {
-        int idx = IntStream.range(0, columns.size()).filter(i -> columns.get(i).getName().equalsIgnoreCase(columnLabel))
-                .findFirst().getAsInt();
-        if (idx == -1) {
+        int idx = IntStream.range(0, columns.size()).filter(i -> columns.get(i).getName()
+                .equalsIgnoreCase(columnLabel)).findFirst().orElse(-1);
+        if (idx < 0) {
             throw new SQLException(String.format("Column \"%s\" not found", columnLabel));
         }
-        return idx;
+        return idx + 1;
     }
 
     @Override

@@ -67,55 +67,66 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public String getString(int columnIndex) throws SQLException {
-        return actualRow[columnIndex - 1] == null ? null : String.valueOf(actualRow[columnIndex - 1]);
+        Object value = getValue(columnIndex);
+        return value == null ? null : String.valueOf(value);
     }
 
     @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? getString(columnIndex).equals("true") : false;
+        Object value = getValue(columnIndex);
+        if (value == null) {
+            return false;
+        }
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue() != 0;
+        }
+        String text = value.toString().trim();
+        return "true".equalsIgnoreCase(text) || "1".equals(text);
     }
 
     @Override
     public byte getByte(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Byte.valueOf(value) : -1;
+        BigDecimal value = toBigDecimal(columnIndex);
+        return value != null ? value.byteValue() : -1;
     }
 
     @Override
     public short getShort(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Short.valueOf(value) : -1;
+        BigDecimal value = toBigDecimal(columnIndex);
+        return value != null ? value.shortValue() : -1;
     }
 
     @Override
     public int getInt(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Integer.valueOf(value) : -1;
+        BigDecimal value = toBigDecimal(columnIndex);
+        return value != null ? value.intValue() : -1;
     }
 
     @Override
     public long getLong(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Long.valueOf(value) : -1;
+        BigDecimal value = toBigDecimal(columnIndex);
+        return value != null ? value.longValue() : -1;
     }
 
     @Override
     public float getFloat(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Float.valueOf(value) : -1;
+        BigDecimal value = toBigDecimal(columnIndex);
+        return value != null ? value.floatValue() : -1;
     }
 
     @Override
     public double getDouble(int columnIndex) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? Double.valueOf(value) : -1;
+        BigDecimal value = toBigDecimal(columnIndex);
+        return value != null ? value.doubleValue() : -1;
     }
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-        String value = getString(columnIndex);
-        return value != null ? new BigDecimal(value) : null;
+        BigDecimal value = toBigDecimal(columnIndex);
+        return value != null ? value.setScale(scale, BigDecimal.ROUND_HALF_UP) : null;
     }
 
     @Override
@@ -158,56 +169,56 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public String getString(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getString(idx + 1);
+        Object value = getValue(columnLabel);
+        return value == null ? null : String.valueOf(value);
     }
 
     @Override
     public boolean getBoolean(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getBoolean(idx + 1);
+        int idx = findColumn(columnLabel);
+        return getBoolean(idx);
     }
 
     @Override
     public byte getByte(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getByte(idx + 1);
+        int idx = findColumn(columnLabel);
+        return getByte(idx);
     }
 
     @Override
     public short getShort(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getShort(idx + 1);
+        int idx = findColumn(columnLabel);
+        return getShort(idx);
     }
 
     @Override
     public int getInt(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getInt(idx + 1);
+        int idx = findColumn(columnLabel);
+        return getInt(idx);
     }
 
     @Override
     public long getLong(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getLong(idx + 1);
+        int idx = findColumn(columnLabel);
+        return getLong(idx);
     }
 
     @Override
     public float getFloat(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getFloat(idx + 1);
+        int idx = findColumn(columnLabel);
+        return getFloat(idx);
     }
 
     @Override
     public double getDouble(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getDouble(idx + 1);
+        int idx = findColumn(columnLabel);
+        return getDouble(idx);
     }
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        BigDecimal val = getBigDecimal(idx + 1);
+        int idx = findColumn(columnLabel);
+        BigDecimal val = getBigDecimal(idx);
         return val != null ? val.setScale(scale, BigDecimal.ROUND_HALF_UP) : null;
     }
 
@@ -268,19 +279,21 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public Object getObject(int columnIndex) throws SQLException {
-        return getString(columnIndex);
+        return getValue(columnIndex);
     }
 
     @Override
     public Object getObject(String columnLabel) throws SQLException {
-        int idx = reader.getColumnIndexByName(columnLabel);
-        return getObject(idx + 1);
+        return getValue(columnLabel);
     }
 
     @Override
     public int findColumn(String columnLabel) throws SQLException {
         int idx = reader.getColumnIndexByName(columnLabel);
-        return (idx + 1);
+        if (idx < 0) {
+            throw new SQLException("Column \"" + columnLabel + "\" not found.");
+        }
+        return idx + 1;
     }
 
     @Override
@@ -295,12 +308,13 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-        return null;
+        return toBigDecimal(columnIndex);
     }
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
-        return null;
+        int idx = findColumn(columnLabel);
+        return getBigDecimal(idx);
     }
 
     @Override
@@ -640,7 +654,7 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public Object getObject(int columnIndex, Map<String, Class<?>> map) throws SQLException {
-        return null;
+        return getObject(columnIndex);
     }
 
     @Override
@@ -665,7 +679,7 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException {
-        return null;
+        return getObject(columnLabel);
     }
 
     @Override
@@ -1010,12 +1024,56 @@ class JdbcSheetsResultSet implements ResultSet {
 
     @Override
     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-        return null;
+        Object value = getObject(columnIndex);
+        if (value == null) {
+            return null;
+        }
+        if (type.isInstance(value)) {
+            return type.cast(value);
+        }
+        throw new SQLException("Cannot convert column " + columnIndex + " to " + type.getName());
     }
 
     @Override
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-        return null;
+        int idx = findColumn(columnLabel);
+        return getObject(idx, type);
+    }
+
+    private Object getValue(int columnIndex) throws SQLException {
+        if (actualRow == null) {
+            return null;
+        }
+        if (columnIndex < 1 || columnIndex > actualRow.length) {
+            throw new SQLException("Invalid column index: " + columnIndex);
+        }
+        return actualRow[columnIndex - 1];
+    }
+
+    private Object getValue(String columnLabel) throws SQLException {
+        int idx = reader.getColumnIndexByName(columnLabel);
+        if (idx < 0) {
+            throw new SQLException("Column \"" + columnLabel + "\" not found.");
+        }
+        return getValue(idx + 1);
+    }
+
+    private BigDecimal toBigDecimal(int columnIndex) throws SQLException {
+        Object value = getValue(columnIndex);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return new BigDecimal(value.toString());
+        }
+        if (value instanceof java.util.Date) {
+            throw new SQLException("Cannot convert date to numeric value at column " + columnIndex);
+        }
+        try {
+            return new BigDecimal(value.toString().trim());
+        } catch (NumberFormatException ex) {
+            throw new SQLException("Invalid numeric value at column " + columnIndex + ": " + value, ex);
+        }
     }
 
     @Override

@@ -11,7 +11,6 @@ import org.javerland.jdbcsheets.util.XslxReader;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author juraj.pacolt
@@ -79,7 +78,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public String getDatabaseProductName() throws SQLException {
-        return "XLSX, ODS, CSV files";
+        return "XLSX files";
     }
 
     @Override
@@ -638,11 +637,8 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
     public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types)
             throws SQLException {
         List<Object[]> data = new ArrayList<>();
-        reader.getSheets().forEach(sheet -> {
-            data.addAll(reader.getSheets().stream()
-                    .map(s -> new Object[] { null, null, sheet, "TABLE", null, null, null, null, null, null })
-                    .collect(Collectors.toList()));
-        });
+        reader.getSheets().forEach(sheet -> data.add(
+                new Object[] { null, null, sheet, "TABLE", null, null, null, null, null, null }));
         return new SystemResultSet(
                 List.of(new Column("TABLE_CAT", Types.VARCHAR), new Column("TABLE_SCHEM", Types.VARCHAR),
                         new Column("TABLE_NAME", Types.VARCHAR), new Column("TABLE_TYPE", Types.VARCHAR),

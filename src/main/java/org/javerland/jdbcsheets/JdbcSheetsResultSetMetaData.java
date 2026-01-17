@@ -59,13 +59,14 @@ class JdbcSheetsResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public String getColumnLabel(int column) throws SQLException {
-        String alias = reader.getColumns().get(column).getAlias();
-        return alias == null ? reader.getColumns().get(column).getName() : alias;
+        int idx = toIndex(column);
+        String alias = reader.getColumns().get(idx).getAlias();
+        return alias == null ? reader.getColumns().get(idx).getName() : alias;
     }
 
     @Override
     public String getColumnName(int column) throws SQLException {
-        return reader.getColumns().get(column).getName();
+        return reader.getColumns().get(toIndex(column)).getName();
     }
 
     @Override
@@ -95,7 +96,7 @@ class JdbcSheetsResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public int getColumnType(int column) throws SQLException {
-        return reader.getColumns().get(0).getSqlType();
+        return reader.getColumns().get(toIndex(column)).getSqlType();
     }
 
     @Override
@@ -131,5 +132,12 @@ class JdbcSheetsResultSetMetaData implements ResultSetMetaData {
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
+    }
+
+    private int toIndex(int column) throws SQLException {
+        if (column < 1 || column > reader.getColumns().size()) {
+            throw new SQLException("Invalid column index: " + column);
+        }
+        return column - 1;
     }
 }

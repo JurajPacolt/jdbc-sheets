@@ -25,7 +25,7 @@ public class DriverInfo {
     public static int PATCH_VERSION = 1;
 
     // Driver name
-    public final static String DRIVER_NAME = "JDBC Driver for XLSX and others sheets reading";
+    public final static String DRIVER_NAME = "JDBC Driver for XLSX reading";
     public final static String DRIVER_SHORT_NAME = "jdbc-sheets";
     public final static String DRIVER_VERSION = String.format("%d.%d.%d", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
     public final static String DRIVER_FULL_NAME = DRIVER_NAME + " " + DRIVER_VERSION;

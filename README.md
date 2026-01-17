@@ -1,5 +1,5 @@
 # Driver jdbc-sheets
-JDBC driver for XLSX and others sheets reading
+JDBC driver for XLSX reading
 
 # Example
 

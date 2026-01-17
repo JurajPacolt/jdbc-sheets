@@ -59,13 +59,14 @@ class SystemResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public String getColumnLabel(int column) throws SQLException {
-        String alias = resultSet.getColumns().get(column).getAlias();
-        return alias == null ? resultSet.getColumns().get(column).getName() : alias;
+        int idx = toIndex(column);
+        String alias = resultSet.getColumns().get(idx).getAlias();
+        return alias == null ? resultSet.getColumns().get(idx).getName() : alias;
     }
 
     @Override
     public String getColumnName(int column) throws SQLException {
-        return resultSet.getColumns().get(column).getName();
+        return resultSet.getColumns().get(toIndex(column)).getName();
     }
 
     @Override
@@ -95,12 +96,12 @@ class SystemResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public int getColumnType(int column) throws SQLException {
-        return resultSet.getColumns().get(column).getSqlType();
+        return resultSet.getColumns().get(toIndex(column)).getSqlType();
     }
 
     @Override
     public String getColumnTypeName(int column) throws SQLException {
-        int sqlType = resultSet.getColumns().get(column).getSqlType();
+        int sqlType = resultSet.getColumns().get(toIndex(column)).getSqlType();
         return SqlTypeUtils.toSqlType(sqlType);
     }
 
@@ -121,11 +122,12 @@ class SystemResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public String getColumnClassName(int column) throws SQLException {
-        if (resultSet.getData().size() > 0 && resultSet.getData().get(0)[column] != null) {
-            return resultSet.getData().get(0)[column].getClass().getName();
+        int idx = toIndex(column);
+        if (resultSet.getData().size() > 0 && resultSet.getData().get(0)[idx] != null) {
+            return resultSet.getData().get(0)[idx].getClass().getName();
         }
-        int sqlType = resultSet.getColumns().get(column).getSqlType();
-        return getColumnTypeName(sqlType);
+        int sqlType = resultSet.getColumns().get(idx).getSqlType();
+        return getClassNameForSqlType(sqlType);
     }
 
     @Override
@@ -136,5 +138,48 @@ class SystemResultSetMetaData implements ResultSetMetaData {
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
+    }
+
+    private int toIndex(int column) throws SQLException {
+        if (column < 1 || column > resultSet.getColumns().size()) {
+            throw new SQLException("Invalid column index: " + column);
+        }
+        return column - 1;
+    }
+
+    private String getClassNameForSqlType(int sqlType) {
+        switch (sqlType) {
+            case java.sql.Types.BOOLEAN:
+            case java.sql.Types.BIT:
+                return Boolean.class.getName();
+            case java.sql.Types.TINYINT:
+                return Byte.class.getName();
+            case java.sql.Types.SMALLINT:
+                return Short.class.getName();
+            case java.sql.Types.INTEGER:
+                return Integer.class.getName();
+            case java.sql.Types.BIGINT:
+                return Long.class.getName();
+            case java.sql.Types.FLOAT:
+            case java.sql.Types.REAL:
+                return Float.class.getName();
+            case java.sql.Types.DOUBLE:
+                return Double.class.getName();
+            case java.sql.Types.DECIMAL:
+            case java.sql.Types.NUMERIC:
+                return java.math.BigDecimal.class.getName();
+            case java.sql.Types.DATE:
+                return java.sql.Date.class.getName();
+            case java.sql.Types.TIME:
+                return java.sql.Time.class.getName();
+            case java.sql.Types.TIMESTAMP:
+                return java.sql.Timestamp.class.getName();
+            case java.sql.Types.BINARY:
+            case java.sql.Types.VARBINARY:
+            case java.sql.Types.LONGVARBINARY:
+                return byte[].class.getName();
+            default:
+                return String.class.getName();
+        }
     }
 }

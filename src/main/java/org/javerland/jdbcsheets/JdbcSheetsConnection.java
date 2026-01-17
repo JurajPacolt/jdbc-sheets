@@ -21,6 +21,7 @@ class JdbcSheetsConnection implements Connection {
     Properties props;
     File file;
     Map<String, Statement> statements = new LinkedHashMap<>();
+    private boolean closed = false;
 
     public JdbcSheetsConnection(Properties props) {
         this.props = props;
@@ -30,8 +31,15 @@ class JdbcSheetsConnection implements Connection {
     protected ReaderType getReaderType() {
         String fileName = file.getName();
         int lastDotIndex = fileName.lastIndexOf('.');
+        if (lastDotIndex < 0) {
+            throw new JdbcSheetsException("File has no extension: " + fileName);
+        }
         String extension = fileName.substring(lastDotIndex + 1);
-        return ReaderType.valueOf(extension.toUpperCase());
+        try {
+            return ReaderType.valueOf(extension.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new JdbcSheetsException("Unsupported file type: " + extension + ". Supported: XLSX", ex);
+        }
     }
 
     protected File getSourceFile() {
@@ -48,6 +56,7 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public Statement createStatement() throws SQLException {
+        ensureOpen();
         JdbcSheetsStatement stmt = new JdbcSheetsStatement(this, file);
         statements.put(stmt.getId(), stmt);
         return stmt;
@@ -55,6 +64,7 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
+        ensureOpen();
         JdbcSheetsPreparedStatement ps = new JdbcSheetsPreparedStatement(this, file, sql);
         statements.put(ps.getId(), ps);
         return ps;
@@ -62,6 +72,7 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public CallableStatement prepareCall(String sql) throws SQLException {
+        ensureOpen();
         JdbcSheetsCallableStatement cs = new JdbcSheetsCallableStatement(this, file, sql);
         statements.put(cs.getId(), cs);
         return cs;
@@ -69,7 +80,7 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public String nativeSQL(String sql) throws SQLException {
-        return "";
+        return sql;
     }
 
     @Override
@@ -79,8 +90,7 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public boolean getAutoCommit() throws SQLException {
-        // ignore
-        return false;
+        return true;
     }
 
     @Override
@@ -99,11 +109,12 @@ class JdbcSheetsConnection implements Connection {
             stmt.close();
         }
         statements.clear();
+        closed = true;
     }
 
     @Override
     public boolean isClosed() throws SQLException {
-        return false;
+        return closed;
     }
 
     @Override
@@ -139,8 +150,7 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public int getTransactionIsolation() throws SQLException {
-        // ignore
-        return 0;
+        return Connection.TRANSACTION_NONE;
     }
 
     @Override
@@ -155,17 +165,17 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
-        return null;
+        return createStatement();
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-        return null;
+        return prepareStatement(sql);
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-        return null;
+        return prepareCall(sql);
     }
 
     @Override
@@ -185,20 +195,17 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public int getHoldability() throws SQLException {
-        // ignore
-        return 0;
+        return ResultSet.HOLD_CURSORS_OVER_COMMIT;
     }
 
     @Override
     public Savepoint setSavepoint() throws SQLException {
-        // ignore
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public Savepoint setSavepoint(String name) throws SQLException {
-        // ignore
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
@@ -213,61 +220,57 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-        return null;
+        return createStatement();
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-        return null;
+        return prepareStatement(sql);
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-        return null;
+        return prepareCall(sql);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
-        return null;
+        return prepareStatement(sql);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
-        return null;
+        return prepareStatement(sql);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
-        return null;
+        return prepareStatement(sql);
     }
 
     @Override
     public Clob createClob() throws SQLException {
-        // ignore
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public Blob createBlob() throws SQLException {
-        // ignore
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public NClob createNClob() throws SQLException {
-        // ignore
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public SQLXML createSQLXML() throws SQLException {
-        // ignore
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public boolean isValid(int timeout) throws SQLException {
-        return false;
+        return !closed && file != null && file.exists();
     }
 
     @Override
@@ -292,14 +295,12 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
-        // ignore
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
     public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
-        // ignore
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     @Override
@@ -323,17 +324,25 @@ class JdbcSheetsConnection implements Connection {
 
     @Override
     public int getNetworkTimeout() throws SQLException {
-        // ignore
         return 0;
     }
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        return null;
+        if (iface.isInstance(this)) {
+            return iface.cast(this);
+        }
+        throw new SQLException("Not a wrapper for " + iface.getName());
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        return false;
+        return iface.isInstance(this);
+    }
+
+    private void ensureOpen() throws SQLException {
+        if (closed) {
+            throw new SQLException("Connection is closed.");
+        }
     }
 }

@@ -20,7 +20,7 @@ public class Column {
 
     public Column(String name, int sqlType) {
         this.name = name;
-        this.alias = alias;
+        this.alias = null;
         this.sqlType = sqlType;
     }
 
