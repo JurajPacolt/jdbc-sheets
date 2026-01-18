@@ -18,7 +18,48 @@ from
 limit 5 
 offset 0;
 ```
-WHERE conditions, ORDER BY clause, and others standards like GROUP BY etc., not supported, yet.
+Supported now:
+- column aliases (shown in results)
+- table aliasing (e.g. `Sheet1 tbl`)
+- `*` and `tbl.*`
+- `limit` / `offset`
+- simple `where` with `=`, `<`, `>`, `like`
+- concatenation with `||`
+- `lower()` and `upper()` in SELECT and WHERE
+
+Not supported yet: ORDER BY, GROUP BY, JOIN, AND/OR in WHERE, `>=`, `<=`, `!=`, `<>`, and others.
+
+### Examples
+```mysql
+select A as Col1, B from Sheet1;
+```
+
+```mysql
+select tbl.A, tbl.B from Sheet1 tbl;
+```
+
+```mysql
+select A || ' ' || B as FullName from Sheet1 limit 5;
+```
+
+```mysql
+select lower(A) as lower_name, upper(B) as upper_name from Sheet1;
+```
+
+```mysql
+select A, B from Sheet1 where A > 10;
+select B from Sheet1 where B like 'Ali%';
+```
+
+```mysql
+select A || ' ' || B as FullName from Sheet1 where lower(A) like '%ste%';
+```
+
+### Notes
+- `where` supports only a single condition (no AND/OR).
+- `like` supports `%` and `_`, and is case-sensitive.
+- Numeric comparisons work only when the cell value is numeric.
+- Formula cells are read from cached results when formula evaluation is not available.
 
 ## Example how to read
 
