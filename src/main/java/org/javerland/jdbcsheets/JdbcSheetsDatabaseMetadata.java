@@ -6,25 +6,27 @@ import org.javerland.jdbcsheets.exception.JdbcSheetsException;
 import org.javerland.jdbcsheets.util.AbstractReader;
 import org.javerland.jdbcsheets.util.Column;
 import org.javerland.jdbcsheets.util.SqlTypeUtils;
-import org.javerland.jdbcsheets.util.XslxReader;
+import org.javerland.jdbcsheets.util.XlsxReader;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * @author juraj.pacolt
  */
-class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
+final class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     private JdbcSheetsConnection connection;
     private AbstractReader reader;
 
-    public JdbcSheetsDatabaseMetadata(JdbcSheetsConnection connection) {
+    public JdbcSheetsDatabaseMetadata(JdbcSheetsConnection connection) throws SQLException {
         this.connection = connection;
         switch (connection.getReaderType()) {
             case XLSX:
-                reader = new XslxReader(connection.getSourceFile());
+                reader = new XlsxReader(connection.sourceFile(), connection.usesHeaderRow());
                 break;
             default:
                 throw new JdbcSheetsException("Unsupported reader type: " + connection.getReaderType());
@@ -38,7 +40,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public boolean allTablesAreSelectable() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -48,7 +50,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public String getUserName() throws SQLException {
-        return "unknown";
+        return "";
     }
 
     @Override
@@ -83,7 +85,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public String getDatabaseProductVersion() throws SQLException {
-        return "???";
+        return "1.0 (OOXML)";
     }
 
     @Override
@@ -108,7 +110,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public boolean usesLocalFiles() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -133,12 +135,12 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public boolean storesMixedCaseIdentifiers() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -153,12 +155,12 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public String getIdentifierQuoteString() throws SQLException {
-        return "";
+        return "\"";
     }
 
     @Override
@@ -173,7 +175,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public String getStringFunctions() throws SQLException {
-        return "";
+        return "LOWER,UPPER";
     }
 
     @Override
@@ -188,7 +190,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public String getSearchStringEscape() throws SQLException {
-        return "";
+        return "\\";
     }
 
     @Override
@@ -208,7 +210,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public boolean supportsColumnAliasing() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -228,12 +230,12 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public boolean supportsTableCorrelationNames() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
     public boolean supportsDifferentTableCorrelationNames() throws SQLException {
-        return false;
+        return true;
     }
 
     @Override
@@ -624,21 +626,27 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
             throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.procedures();
     }
 
     @Override
     public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern,
             String columnNamePattern) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.procedureColumns();
     }
 
     @Override
     public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types)
             throws SQLException {
         List<Object[]> data = new ArrayList<>();
-        reader.getSheets().forEach(sheet -> data.add(
-                new Object[] { null, null, sheet, "TABLE", null, null, null, null, null, null }));
+        boolean tableTypeRequested = types == null || types.length == 0
+                || Arrays.stream(types).anyMatch(type -> "TABLE".equalsIgnoreCase(type));
+        if (tableTypeRequested) {
+            reader.getSheets().stream()
+                    .filter(sheet -> matchesPattern(sheet, tableNamePattern))
+                    .forEach(sheet -> data.add(
+                            new Object[] { null, null, sheet, "TABLE", null, null, null, null, null, null }));
+        }
         return new SystemResultSet(
                 List.of(new Column("TABLE_CAT", Types.VARCHAR), new Column("TABLE_SCHEM", Types.VARCHAR),
                         new Column("TABLE_NAME", Types.VARCHAR), new Column("TABLE_TYPE", Types.VARCHAR),
@@ -650,12 +658,12 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public ResultSet getSchemas() throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.schemas();
     }
 
     @Override
     public ResultSet getCatalogs() throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.catalogs();
     }
 
     @Override
@@ -670,12 +678,15 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
             throws SQLException {
         List<Object[]> data = new ArrayList<>();
         for (String tableName : reader.getSheets()) {
-            if (StringUtils.isNotBlank(tableNamePattern) && !tableNamePattern.equalsIgnoreCase(tableName)) {
+            if (!matchesPattern(tableName, tableNamePattern)) {
                 continue;
             }
             List<Column> tableColumns = reader.listColumnsBySheetName(tableName);
             for (int i = 0; i < tableColumns.size(); i++) {
                 Column column = tableColumns.get(i);
+                if (!matchesPattern(column.getName(), columnNamePattern)) {
+                    continue;
+                }
                 data.add(new Object[] { null, null, tableName, column.getName(), column.getSqlType(),
                         SqlTypeUtils.toSqlType(column.getSqlType()), Integer.MAX_VALUE, 0, 0, 10,
                         DatabaseMetaData.columnNullable, null, null, 0, 0, 0, i + 1, "YES", null, null, null, 0,
@@ -701,24 +712,24 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern)
             throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.columnPrivileges();
     }
 
     @Override
     public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern)
             throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.tablePrivileges();
     }
 
     @Override
     public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable)
             throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.rowIdentifiers();
     }
 
     @Override
     public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.rowIdentifiers();
     }
 
     @Override
@@ -732,39 +743,39 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.keyReferences();
     }
 
     @Override
     public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.keyReferences();
     }
 
     @Override
     public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable,
             String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.keyReferences();
     }
 
     @Override
     public ResultSet getTypeInfo() throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.typeInfo();
     }
 
     @Override
     public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate)
             throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.indexInfo();
     }
 
     @Override
     public boolean supportsResultSetType(int type) throws SQLException {
-        return false;
+        return type == ResultSet.TYPE_FORWARD_ONLY;
     }
 
     @Override
     public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
-        return false;
+        return type == ResultSet.TYPE_FORWARD_ONLY && concurrency == ResultSet.CONCUR_READ_ONLY;
     }
 
     @Override
@@ -820,7 +831,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
     @Override
     public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types)
             throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.udts();
     }
 
     @Override
@@ -850,38 +861,38 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.superTypes();
     }
 
     @Override
     public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.superTables();
     }
 
     @Override
     public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern,
             String attributeNamePattern) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.attributes();
     }
 
     @Override
     public boolean supportsResultSetHoldability(int holdability) throws SQLException {
-        return false;
+        return holdability == ResultSet.HOLD_CURSORS_OVER_COMMIT;
     }
 
     @Override
     public int getResultSetHoldability() throws SQLException {
-        return 0;
+        return ResultSet.HOLD_CURSORS_OVER_COMMIT;
     }
 
     @Override
     public int getDatabaseMajorVersion() throws SQLException {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getDatabaseMinorVersion() throws SQLException {
-        return -1;
+        return 0;
     }
 
     @Override
@@ -896,7 +907,7 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public int getSQLStateType() throws SQLException {
-        return 0;
+        return DatabaseMetaData.sqlStateSQL;
     }
 
     @Override
@@ -911,12 +922,12 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public RowIdLifetime getRowIdLifetime() throws SQLException {
-        return null;
+        return RowIdLifetime.ROWID_UNSUPPORTED;
     }
 
     @Override
     public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.schemas();
     }
 
     @Override
@@ -931,25 +942,25 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.clientInfoProperties();
     }
 
     @Override
     public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern)
             throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.functions();
     }
 
     @Override
     public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern,
             String columnNamePattern) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.functionColumns();
     }
 
     @Override
     public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern,
             String columnNamePattern) throws SQLException {
-        return new SystemResultSet(new ArrayList<>(), new ArrayList<>());
+        return JdbcMetadataResultSets.pseudoColumns();
     }
 
     @Override
@@ -959,11 +970,42 @@ class JdbcSheetsDatabaseMetadata implements DatabaseMetaData {
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        return null;
+        if (iface.isInstance(this)) {
+            return iface.cast(this);
+        }
+        throw new SQLException("Not a wrapper for " + iface.getName());
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        return false;
+        return iface.isInstance(this);
+    }
+
+    private boolean matchesPattern(String value, String sqlPattern) {
+        if (StringUtils.isBlank(sqlPattern)) {
+            return true;
+        }
+        StringBuilder regex = new StringBuilder();
+        boolean escaped = false;
+        for (int i = 0; i < sqlPattern.length(); i++) {
+            char ch = sqlPattern.charAt(i);
+            if (escaped) {
+                regex.append(Pattern.quote(String.valueOf(ch)));
+                escaped = false;
+            } else if (ch == '\\') {
+                escaped = true;
+            } else if (ch == '%') {
+                regex.append(".*");
+            } else if (ch == '_') {
+                regex.append('.');
+            } else {
+                regex.append(Pattern.quote(String.valueOf(ch)));
+            }
+        }
+        if (escaped) {
+            regex.append(Pattern.quote("\\"));
+        }
+        return Pattern.compile(regex.toString(), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
+                .matcher(value).matches();
     }
 }

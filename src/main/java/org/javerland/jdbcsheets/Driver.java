@@ -1,46 +1,47 @@
 /* Created on 14.12.2024 */
 package org.javerland.jdbcsheets;
 
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.javerland.jdbcsheets.exception.JdbcSheetsException;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
+ * Read-only JDBC driver for XLSX workbooks.
+ *
  * @author juraj.pacolt
  */
 public class Driver implements java.sql.Driver {
 
+    private static final Object REGISTRATION_LOCK = new Object();
     private static Driver instance;
-    private static final Logger PARENT_LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-    private static final Logger LOGGER = Logger.getLogger(Driver.class.getName());
+    private static final String URL_PREFIX = "jdbc:sheets://";
 
     static {
         register();
+    }
+
+    /** Creates a driver instance. Registration is normally handled by the JDBC service provider. */
+    public Driver() {
     }
 
     /**
      * Register driver.
      */
     public static void register() {
-        if (instance != null) {
-            return;
-        }
-        try {
-            instance = new Driver();
-            DriverManager.registerDriver(instance);
-        } catch (SQLException ex) {
-            throw new JdbcSheetsException(ex.getMessage(), ex);
+        synchronized (REGISTRATION_LOCK) {
+            if (instance != null) {
+                return;
+            }
+            try {
+                instance = new Driver();
+                DriverManager.registerDriver(instance);
+            } catch (SQLException ex) {
+                throw new JdbcSheetsException(ex.getMessage(), ex);
+            }
         }
     }
 
@@ -48,69 +49,76 @@ public class Driver implements java.sql.Driver {
      * Unregister driver.
      */
     public static void unregister() {
-        if (instance == null) {
-            return;
-        }
-        try {
-            DriverManager.deregisterDriver(instance);
-            instance = null;
-        } catch (SQLException ex) {
-            throw new JdbcSheetsException(ex.getMessage(), ex);
+        synchronized (REGISTRATION_LOCK) {
+            if (instance == null) {
+                return;
+            }
+            try {
+                DriverManager.deregisterDriver(instance);
+                instance = null;
+            } catch (SQLException ex) {
+                throw new JdbcSheetsException(ex.getMessage(), ex);
+            }
         }
     }
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
-        Properties properties = Arrays.stream(getPropertyInfo(url, info))
-                .filter(i -> i != null && i.name != null && i.value != null)
-                .collect(Collectors.toMap(
-                        i -> i.name,
-                        i -> i.value,
-                        (existing, replacement) -> existing,
-                        Properties::new
-                ));
+        if (!acceptsURL(url)) {
+            return null;
+        }
+        Properties properties = new Properties();
+        for (DriverPropertyInfo property : getPropertyInfo(url, info)) {
+            if (property.value != null) {
+                properties.setProperty(property.name, property.value);
+            }
+        }
         properties.setProperty("url", url);
         return new JdbcSheetsConnection(properties);
     }
 
     @Override
     public boolean acceptsURL(String url) throws SQLException {
-        return Stream.of(getPropertyInfo(url, null)).anyMatch(i ->
-                i.name.equals(DriverInfo.PROP_FILE));
+        return url != null && url.regionMatches(true, 0, URL_PREFIX, 0, URL_PREFIX.length());
     }
 
     @Override
     public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-        if (!url.trim().toLowerCase().startsWith("jdbc:sheets://")) {
-            throw new JdbcSheetsException("Illegal connection string url.");
+        if (!acceptsURL(url)) {
+            throw new SQLException("Unsupported JDBC URL: " + url);
         }
         try {
-            URL u = new URL("file://localhost" + url.substring(14));
-
-            Map<String, String> queryMap = new HashMap<>();
-            if (StringUtils.isNotBlank(u.getQuery())) {
-                queryMap = Arrays.stream(u.getQuery().split("&"))
-                        .map(param -> param.split("="))
-                        .collect(Collectors.toMap(
-                                entry -> entry[0],
-                                entry -> entry.length > 1 ? entry[1] : ""
-                        ));
+            Properties parsed = new Properties();
+            int questionMark = url.indexOf('?', URL_PREFIX.length());
+            if (questionMark >= 0 && questionMark + 1 < url.length()) {
+                String query = url.substring(questionMark + 1);
+                for (String parameter : query.split("&")) {
+                    if (parameter.isEmpty()) {
+                        continue;
+                    }
+                    String[] entry = parameter.split("=", 2);
+                    String key = decode(entry[0]);
+                    String value = entry.length == 2 ? decode(entry[1]) : "";
+                    if (!key.isEmpty()) {
+                        parsed.setProperty(key, value);
+                    }
+                }
             }
 
             if (info != null) {
-                for (Map.Entry<Object, Object> e : info.entrySet()) {
-                    queryMap.put(e.getKey().toString(), ObjectUtils.defaultIfNull(e.getValue(), "")
-                            .toString());
+                for (String name : info.stringPropertyNames()) {
+                    parsed.setProperty(name, info.getProperty(name, ""));
                 }
             }
 
             return new DriverPropertyInfo[]{
-                    new DriverPropertyInfo(DriverInfo.PROP_DIRECTORY, queryMap.get("directory")),
-                    new DriverPropertyInfo(DriverInfo.PROP_DATABASE, queryMap.get("database")),
-                    new DriverPropertyInfo(DriverInfo.PROP_FILE, queryMap.get("file"))
+                    new DriverPropertyInfo(DriverInfo.PROP_DIRECTORY, parsed.getProperty(DriverInfo.PROP_DIRECTORY)),
+                    new DriverPropertyInfo(DriverInfo.PROP_DATABASE, parsed.getProperty(DriverInfo.PROP_DATABASE)),
+                    new DriverPropertyInfo(DriverInfo.PROP_FILE, parsed.getProperty(DriverInfo.PROP_FILE)),
+                    new DriverPropertyInfo(DriverInfo.PROP_HEADER, parsed.getProperty(DriverInfo.PROP_HEADER, "false"))
             };
-        } catch (MalformedURLException ex) {
-            throw new JdbcSheetsException(ex.getMessage(), ex);
+        } catch (IllegalArgumentException ex) {
+            throw new SQLException("Invalid URL encoding in JDBC URL.", ex);
         }
     }
 
@@ -126,11 +134,15 @@ public class Driver implements java.sql.Driver {
 
     @Override
     public boolean jdbcCompliant() {
-        return true;
+        return false;
     }
 
     @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return PARENT_LOGGER;
+        return Logger.getLogger("org.javerland.jdbcsheets");
+    }
+
+    private String decode(String value) {
+        return URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 }

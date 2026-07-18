@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- The public class name is part of the JDBC driver API. -->
+    <Match>
+        <Class name="org.javerland.jdbcsheets.Driver"/>
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
+    </Match>
+
+    <!-- JDBC explicitly requires these accessors to return the owning JDBC object. -->
+    <Match>
+        <Or>
+            <Class name="org.javerland.jdbcsheets.JdbcSheetsDatabaseMetadata"/>
+            <Class name="org.javerland.jdbcsheets.JdbcSheetsPreparedStatement"/>
+            <Class name="org.javerland.jdbcsheets.JdbcSheetsResultSet"/>
+            <Class name="org.javerland.jdbcsheets.JdbcSheetsStatement"/>
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+
+    <!-- execute()/executeQuery() intentionally return an open JDBC ResultSet to the caller. -->
+    <Match>
+        <Or>
+            <Class name="org.javerland.jdbcsheets.JdbcSheetsPreparedStatement"/>
+            <Class name="org.javerland.jdbcsheets.JdbcSheetsStatement"/>
+        </Or>
+        <Bug pattern="OBL_UNSATISFIED_OBLIGATION"/>
+    </Match>
+</FindBugsFilter>

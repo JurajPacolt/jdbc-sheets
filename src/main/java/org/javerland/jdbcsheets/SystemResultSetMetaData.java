@@ -24,36 +24,43 @@ class SystemResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public boolean isAutoIncrement(int column) throws SQLException {
+        toIndex(column);
         return false;
     }
 
     @Override
     public boolean isCaseSensitive(int column) throws SQLException {
+        toIndex(column);
         return false;
     }
 
     @Override
     public boolean isSearchable(int column) throws SQLException {
+        toIndex(column);
         return false;
     }
 
     @Override
     public boolean isCurrency(int column) throws SQLException {
+        toIndex(column);
         return false;
     }
 
     @Override
     public int isNullable(int column) throws SQLException {
-        return 0;
+        toIndex(column);
+        return ResultSetMetaData.columnNullableUnknown;
     }
 
     @Override
     public boolean isSigned(int column) throws SQLException {
+        toIndex(column);
         return false;
     }
 
     @Override
     public int getColumnDisplaySize(int column) throws SQLException {
+        toIndex(column);
         return 128;
     }
 
@@ -71,26 +78,31 @@ class SystemResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public String getSchemaName(int column) throws SQLException {
+        toIndex(column);
         return "";
     }
 
     @Override
     public int getPrecision(int column) throws SQLException {
+        toIndex(column);
         return 0;
     }
 
     @Override
     public int getScale(int column) throws SQLException {
+        toIndex(column);
         return 0;
     }
 
     @Override
     public String getTableName(int column) throws SQLException {
+        toIndex(column);
         return "";
     }
 
     @Override
     public String getCatalogName(int column) throws SQLException {
+        toIndex(column);
         return "";
     }
 
@@ -107,16 +119,19 @@ class SystemResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public boolean isReadOnly(int column) throws SQLException {
+        toIndex(column);
         return true;
     }
 
     @Override
     public boolean isWritable(int column) throws SQLException {
+        toIndex(column);
         return false;
     }
 
     @Override
     public boolean isDefinitelyWritable(int column) throws SQLException {
+        toIndex(column);
         return false;
     }
 
@@ -132,12 +147,15 @@ class SystemResultSetMetaData implements ResultSetMetaData {
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        return null;
+        if (iface.isInstance(this)) {
+            return iface.cast(this);
+        }
+        throw new SQLException("Not a wrapper for " + iface.getName());
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        return false;
+        return iface.isInstance(this);
     }
 
     private int toIndex(int column) throws SQLException {

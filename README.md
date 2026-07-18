@@ -1,107 +1,138 @@
-# Driver jdbc-sheets
-JDBC driver for XLSX reading
+# jdbc-sheets
 
-# Example
+`jdbc-sheets` is a read-only JDBC 4.2 driver for querying XLSX worksheets with a small SQL subset.
+Each worksheet is exposed as a table. By default, columns use Excel names (`A`, `B`, ..., `AA`);
+the optional `header=true` connection property uses the first physical row as column names instead.
 
-For example file `test-data.xlsx` with `Sheet1` and those data.
+The driver requires Java 11 or newer. CSV and ODS are not currently supported.
 
-_The data are generated purely randomly using AI. It does not contain real personal data._
+## Dependency
 
-<img src="./src/test/resources/data-image.png">
-
-## Potencional query
-```mysql
-select 
-    A as "Col1", B, C, D, E 
-from 
-    Sheet1 
-limit 5 
-offset 0;
-```
-Supported now:
-- column aliases (shown in results)
-- table aliasing (e.g. `Sheet1 tbl`)
-- `*` and `tbl.*`
-- `limit` / `offset`
-- simple `where` with `=`, `<`, `>`, `like`
-- concatenation with `||`
-- `lower()` and `upper()` in SELECT and WHERE
-
-Not supported yet: ORDER BY, GROUP BY, JOIN, AND/OR in WHERE, `>=`, `<=`, `!=`, `<>`, and others.
-
-### Examples
-```mysql
-select A as Col1, B from Sheet1;
+```xml
+<dependency>
+    <groupId>org.javerland</groupId>
+    <artifactId>jdbc-sheets</artifactId>
+    <version>26.3.1</version>
+</dependency>
 ```
 
-```mysql
-select tbl.A, tbl.B from Sheet1 tbl;
-```
+The driver is registered through the standard JDBC service-provider mechanism, so an explicit
+`Class.forName("org.javerland.jdbcsheets.Driver")` call is normally unnecessary.
 
-```mysql
-select A || ' ' || B as FullName from Sheet1 limit 5;
-```
+## Usage
 
-```mysql
-select lower(A) as lower_name, upper(B) as upper_name from Sheet1;
-```
-
-```mysql
-select A, B from Sheet1 where A > 10;
-select B from Sheet1 where B like 'Ali%';
-```
-
-```mysql
-select A || ' ' || B as FullName from Sheet1 where lower(A) like '%ste%';
-```
-
-### Notes
-- `where` supports only a single condition (no AND/OR).
-- `like` supports `%` and `_`, and is case-sensitive.
-- Numeric comparisons work only when the cell value is numeric.
-- Formula cells are read from cached results when formula evaluation is not available.
-
-## Example how to read
+For a workbook containing a `Sheet1` worksheet:
 
 ```java
-Class.forName("org.javerland.jdbcsheets.Driver");
+String url = "jdbc:sheets://?file=./test-data.xlsx";
 
-try (Connection conn = DriverManager.getConnection("jdbc:sheets://?file=./test-data.xlsx")) {
-    try (Statement stmt = conn.createStatement()) {
-        try (ResultSet rs = stmt.executeQuery("select A as Col1, B, C, D, E from Sheet1 limit 5 offset 0")) {
-            while (rs.next()) {
-                String name = rs.getString("Col1");
-                String surname = rs.getString(2); // Or "B"
-                System.out.println(String.format("%s %s", name, surname));
-            }
-        }
+try (Connection connection = DriverManager.getConnection(url);
+     Statement statement = connection.createStatement();
+     ResultSet result = statement.executeQuery(
+             "select A as FirstName, B as LastName from Sheet1 limit 5 offset 0")) {
+    while (result.next()) {
+        System.out.printf("%s %s%n",
+                result.getString("FirstName"), result.getString("LastName"));
     }
 }
-
-try (Connection conn = DriverManager.getConnection("jdbc:sheets://?database=test-data.xlsx&directory=./")) {
-    // ... .. .
-}
 ```
 
-Output
-```
-Melissa Perry
-Valerie Grant
-Steve Stone
-Jessica Rosales
-Tyler Sandoval
+An alternative URL separates the directory and file name:
+
+```text
+jdbc:sheets://?database=test-data.xlsx&directory=./
 ```
 
-# How to build
+To query a workbook whose first row contains column names:
 
-By Maven standard
+```text
+jdbc:sheets://?file=./people.xlsx&header=true
+```
+
+The header row is excluded from query results and type inference. Header names are matched without
+regard to case, names containing spaces can be quoted (for example `"Full Name"`), and duplicate
+names are rejected.
+
+URL query values must be percent-encoded when they contain reserved characters such as `&` or `=`.
+
+## Supported SQL
+
+- `SELECT ... FROM worksheet`
+- column aliases and worksheet aliases
+- `*` and `alias.*`
+- `LIMIT` and `OFFSET`
+- `WHERE` expressions with parentheses, `AND`/`OR`, `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`,
+  `LIKE`, `IS NULL`, and `IS NOT NULL`
+- one-column `ORDER BY ... ASC|DESC`
+- string concatenation with `||`
+- `LOWER()` and `UPPER()` in `SELECT` and `WHERE`
+- scalar parameters through `PreparedStatement`
+
+Examples:
+
+```sql
+select A as FirstName, B from Sheet1;
+select sheet.A, sheet.B from Sheet1 sheet;
+select A || ' ' || B as FullName from Sheet1 limit 5;
+select lower(A) as LowerName, upper(B) as UpperName from Sheet1;
+select B from Sheet1 where B like 'Ali%';
+select A, B from Sheet1 where A >= 18 and B is not null order by A desc;
+select "Full Name", Age from People where Age >= ? order by Age;
+```
+
+`PreparedStatement` supports nulls, booleans, numbers, strings, JDBC date/time values, and URLs.
+Parameters are safely quoted and validated before execution.
+
+The driver does not currently support multi-column ordering, `GROUP BY`, `JOIN`, subqueries,
+`DISTINCT`, writes, transactions, batches, binary/character streams, or callable statements.
+Unsupported JDBC operations throw
+`SQLFeatureNotSupportedException` instead of being silently ignored.
+
+`LIKE` supports `%` and `_` and is case-sensitive. Numeric comparisons require numeric cell values.
+Formula cells are evaluated when possible and otherwise use their cached value. Empty physical rows
+are skipped. XLSX files are always opened in read-only mode. Column types are inferred in one pass;
+columns containing incompatible value types are reported as `JAVA_OBJECT`.
+
+## Build
+
+Use the included Maven Wrapper:
 
 ```shell
-mvn clean package
+bash mvnw verify
 ```
 
-Or assembly single jar, with all dependencies
+On Windows:
+
+```powershell
+.\mvnw.cmd verify
+```
+
+`verify` runs JUnit 5 tests, Mockito-based collaborator tests, JaCoCo coverage thresholds,
+dependency analysis, and SpotBugs. Optional mutation testing can be run with:
 
 ```shell
-mvn clean package assembly:single
+bash mvnw -Pmutation test-compile pitest:mutationCoverage
 ```
+
+To build a JAR containing all runtime dependencies:
+
+```shell
+bash mvnw package assembly:single
+```
+
+The dependency bundle is created as
+`target/jdbc-sheets-26.3.1-jar-with-dependencies.jar`.
+
+Release signing and Central publishing are isolated in the `release` Maven profile and require the
+corresponding credentials and GPG key configuration.
+
+## Test data
+
+The sample data in `src/test/resources/test-data.xlsx` is randomly generated and does not contain
+real personal data.
+
+![Example worksheet](./src/test/resources/data-image.png)
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).

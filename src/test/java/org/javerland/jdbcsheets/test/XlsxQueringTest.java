@@ -2,6 +2,7 @@
 package org.javerland.jdbcsheets.test;
 
 import org.javerland.jdbcsheets.test.constants.TestConstants;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.sql.*;
@@ -24,7 +25,7 @@ public class XlsxQueringTest {
                         String surname = rs.getString(2);
                         sb.append(String.format("%s,%s,", name, surname));
                     }
-                    assert sb.toString().equals(expected);
+                    Assertions.assertEquals(expected, sb.toString());
                 }
             }
         }
