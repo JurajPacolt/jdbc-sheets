@@ -42,7 +42,7 @@ class DriverBehaviorTest {
         Driver driver = new Driver();
         Assertions.assertEquals(26, driver.getMajorVersion());
         Assertions.assertEquals(3, driver.getMinorVersion());
-        Assertions.assertEquals("26.3.1", DriverInfo.DRIVER_VERSION);
+        Assertions.assertEquals("26.3.2", DriverInfo.DRIVER_VERSION);
         Assertions.assertNotNull(driver.getParentLogger());
 
         try {

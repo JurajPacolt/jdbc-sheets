@@ -31,7 +31,7 @@ public final class DriverInfo {
     /** Minor driver version. */
     public static final int MINOR_VERSION = 3;
     /** Patch driver version. */
-    public static final int PATCH_VERSION = 1;
+    public static final int PATCH_VERSION = 2;
 
     /** Human-readable driver name. */
     public final static String DRIVER_NAME = "JDBC Sheets Driver for XLSX";

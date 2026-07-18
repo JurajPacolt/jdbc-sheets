@@ -62,7 +62,7 @@ class DriverContractTest {
 
     @Test
     void versionAndConnectionValidationAreConsistent() throws Exception {
-        Assertions.assertEquals("26.3.1", DriverInfo.DRIVER_VERSION);
+        Assertions.assertEquals("26.3.2", DriverInfo.DRIVER_VERSION);
         String pom = Files.readString(Path.of("pom.xml"));
         Assertions.assertTrue(pom.contains("<version>" + DriverInfo.DRIVER_VERSION + "</version>"));
 

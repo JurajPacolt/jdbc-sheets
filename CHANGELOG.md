@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented here.
 
+## 26.3.2
+
+- Bumped the project, JDBC driver, documentation, and release artifact version to 26.3.2.
+
 ## 26.3.1
 
 - Added scalar `PreparedStatement` support with parameter metadata and safe literal binding.

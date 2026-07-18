@@ -12,7 +12,7 @@ The driver requires Java 11 or newer. CSV and ODS are not currently supported.
 <dependency>
     <groupId>org.javerland</groupId>
     <artifactId>jdbc-sheets</artifactId>
-    <version>26.3.1</version>
+    <version>26.3.2</version>
 </dependency>
 ```
 
@@ -121,7 +121,7 @@ bash mvnw package assembly:single
 ```
 
 The dependency bundle is created as
-`target/jdbc-sheets-26.3.1-jar-with-dependencies.jar`.
+`target/jdbc-sheets-26.3.2-jar-with-dependencies.jar`.
 
 Release signing and Central publishing are isolated in the `release` Maven profile and require the
 corresponding credentials and GPG key configuration.
