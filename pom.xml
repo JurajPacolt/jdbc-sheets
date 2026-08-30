@@ -37,12 +37,26 @@
         <poi.version>5.4.0</poi.version>
         <junit.version>5.10.3</junit.version>
         <mockito.version>5.18.0</mockito.version>
-        <log4j.version>2.24.3</log4j.version>
+        <log4j.version>2.26.1</log4j.version>
         <spotbugs.plugin.version>4.10.2.0</spotbugs.plugin.version>
         <pitest.version>1.25.3</pitest.version>
         <pitest.junit5.version>1.2.3</pitest.junit5.version>
         <pitest.mutationThreshold>60</pitest.mutationThreshold>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Aligns log4j-api pulled in transitively by Apache POI with the log4j-core
+                 version used in tests (CVE-2025-68161, CVE-2026-34477/34478/34480, CVE-2026-49844). -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${log4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
